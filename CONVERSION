@@ -47,3 +47,6 @@
 
    Once this is done bzip2.c compiles cleanly once more. However, the
    link fails.
+
+6. Fix the build to include the other files. Fix stupid mistakes. Move
+   definitions that need to be shared (and can be safely!).

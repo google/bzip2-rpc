@@ -89,8 +89,6 @@
 #   define APPEND_FLAG(root, name) \
       root=snocString((root), (name))
 
-#   define SET_BINARY_MODE(fd) /**/
-
 #   ifdef __GNUC__
 #      define NORETURN __attribute__ ((noreturn))
 #   else
@@ -162,15 +160,9 @@
 --*/
 
 typedef char            Char;
-typedef unsigned char   UChar;
-typedef int             Int32;
-typedef unsigned int    UInt32;
 typedef short           Int16;
 typedef unsigned short  UInt16;
                                        
-#define True  ((Bool)1)
-#define False ((Bool)0)
-
 /*--
   IntNative is your platform's `native' int size.
   Only here to avoid probs with 64-bit platforms.

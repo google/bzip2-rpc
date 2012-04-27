@@ -37,8 +37,8 @@ OBJS= blocksort.o  \
 
 all: libbz2.a bzip2 bzip2recover test
 
-bzip2: libbz2.a bzip2.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o bzip2 bzip2.o -L. -lbz2
+bzip2: libbz2.a bzip2.o bzip2_wrapped.o capsicum.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o bzip2 bzip2.o bzip2_wrapped.o capsicum.o -L. -lbz2
 
 bzip2recover: bzip2recover.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o bzip2recover bzip2recover.o
@@ -132,6 +132,10 @@ bzip2.o: bzip2.c
 	$(CC) $(CFLAGS) -c bzip2.c
 bzip2recover.o: bzip2recover.c
 	$(CC) $(CFLAGS) -c bzip2recover.c
+bzip2_wrapped.o: bzip2_wrapped.c
+	$(CC) $(CFLAGS) -c bzip2_wrapped.c
+capsicum.o: capsicum.c
+	$(CC) $(CFLAGS) -c capsicum.c
 
 
 distclean: clean

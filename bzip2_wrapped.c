@@ -1,4 +1,6 @@
-#include "bzip2_wrapped.c"
+#include <stdio.h>
+#include "bzlib.h"
+#include "bzip2_wrapped.h"
 
 /*---------------------------------------------------*/
 /*--- An implementation of 64-bit ints.  Sigh.    ---*/
