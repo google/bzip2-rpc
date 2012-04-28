@@ -163,13 +163,6 @@ typedef char            Char;
 typedef short           Int16;
 typedef unsigned short  UInt16;
                                        
-/*--
-  IntNative is your platform's `native' int size.
-  Only here to avoid probs with 64-bit platforms.
---*/
-typedef int IntNative;
-
-
 /*---------------------------------------------------*/
 /*--- Misc (file handling) data decls             ---*/
 /*---------------------------------------------------*/
@@ -221,7 +214,6 @@ static void    compressedStreamEOF   ( void )        NORETURN;
 
 static void    copyFileName ( Char*, Char* );
 static void*   myMalloc     ( Int32 );
-static void    applySavedFileAttrToOutputFile ( IntNative fd );
 static void    unwrap_applySavedFileAttrToOutputFile(int fd);
 
 static int output_fd;

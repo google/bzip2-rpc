@@ -67,3 +67,15 @@
    are incorrect.
 
 8. Continue in this vein until we hit a new problem.
+
+9. Now we need to invoke the function we wrapped in step 3. Note that
+   there are some dangling ends left - for example,
+   applySavedFileAttrToOutputFile() needs to be renamed in bzip2.c but
+   hasn't been yet. No matter: compile errors will point that out to
+   us later.
+
+   Note that we could have instead named
+   invoke_applySavedFileAttrToOutputFile() as
+   applySavedFileAttrToOutputFile(), which would have automatically
+   dealt with the rest of bzip2_wrapped.c, since it is static and so
+   would not be available in bzip2.c.

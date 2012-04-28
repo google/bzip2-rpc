@@ -1,6 +1,17 @@
 #include <stdio.h>
 #include "bzlib.h"
 #include "bzip2_wrapped.h"
+#include "capsicum.h"
+
+/* Invocations in the parent */
+
+static void invoke_applySavedFileAttrToOutputFile(int fd) {
+  if (!lc_is_wrapped()) {
+    wrapped_applySavedFileAttrToOutputFile(fd);
+    return;
+  }
+  lc_send_to_parent("void", "applySavedFileAttrToOutputFile", "int", fd);
+}
 
 /*---------------------------------------------------*/
 /*--- An implementation of 64-bit ints.  Sigh.    ---*/
@@ -146,7 +157,7 @@ void wrapped_compressStream ( FILE *stream, FILE *zStream )
    if (zStream != stdout) {
       Int32 fd = fileno ( zStream );
       if (fd < 0) goto errhandler_io;
-      applySavedFileAttrToOutputFile ( fd );
+      invoke_applySavedFileAttrToOutputFile ( fd );
       ret = fclose ( zStream );
       outputHandleJustInCase = NULL;
       if (ret == EOF) goto errhandler_io;
