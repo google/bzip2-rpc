@@ -1,0 +1,8 @@
+1. Move the code we want to isolate to its own compilation unit. This
+   is so we can use compile-time errors to detect any interactions
+   with the rest of the code.
+
+   In this case, we want to wrap the code that interacts with the
+   compression and decompression library. A visual inspection shows
+   that this is just the functions compressStream(),
+   uncompressStream() and testStream().
