@@ -223,8 +223,53 @@ static void    compressedStreamEOF   ( void )        NORETURN;
 static void    copyFileName ( Char*, Char* );
 static void*   myMalloc     ( Int32 );
 static void    applySavedFileAttrToOutputFile ( IntNative fd );
+static void    unwrap_applySavedFileAttrToOutputFile(int fd);
 
+static int output_fd;
 
+static struct lc_capability caps[] = {
+  { "applySavedFileAttrToOutputFile", unwrap_applySavedFileAttrToOutputFile },
+};
+
+// This is only needed to get the function types to match for
+// lc_wrap_filter().
+static int call_compressStream(FILE *stream, FILE *zStream) {
+  wrapped_compressStream(stream, zStream);
+  return 1;
+}
+
+static void compressStream(FILE *stream, FILE *zStream) {
+  if (!lc_available()) {
+    wrapped_compressStream(stream, zStream);
+    return;
+  }
+
+  output_fd = fileno(zStream);
+  lc_wrap_filter(call_compressStream, stream, zStream, caps, 1);
+}
+
+static int call_uncompressStream(FILE *zStream, FILE *stream) {
+  return wrapped_uncompressStream(zStream, stream);
+}
+
+static Bool uncompressStream(FILE *zStream, FILE *stream) {
+  if (!lc_available())
+    return wrapped_uncompressStream(zStream, stream);
+
+  output_fd = fileno(stream);
+  return lc_wrap_filter(call_uncompressStream, zStream, stream, caps, 1);
+}
+
+static int call_testStream(FILE *zStream, FILE *dummy) {
+  return wrapped_testStream(zStream);
+}
+
+static Bool testStream(FILE *zStream) {
+  if (!lc_available())
+    return wrapped_testStream(zStream);
+
+  return lc_wrap_filter(call_testStream, zStream, NULL, NULL, 0);
+}
 
 /*---------------------------------------------------*/
 /*--- Error [non-] handling grunge                ---*/
@@ -660,8 +705,6 @@ void applySavedFileAttrToOutputFile ( IntNative fd )
    */
 #  endif
 }
-
-static int output_fd;
 
 static void unwrap_applySavedFileAttrToOutputFile(int fd) {
   int ofd;

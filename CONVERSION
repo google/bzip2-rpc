@@ -39,3 +39,11 @@
 
 4. The remaining unused functions do not require authority, so simply
    move them into the wrapped code.
+
+5. Rename (so we don't accidentally invoke them direactly) and invoke
+   the wrapped functions, handing in the capability they require (so
+   far). If capability mode is not available, simply call the wrapped
+   functions directly.
+
+   Once this is done bzip2.c compiles cleanly once more. However, the
+   link fails.

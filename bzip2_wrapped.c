@@ -102,7 +102,7 @@ Bool myfeof ( FILE* f )
 
 
 /*---------------------------------------------*/
-void compressStream ( FILE *stream, FILE *zStream )
+void wrapped_compressStream ( FILE *stream, FILE *zStream )
 {
    BZFILE* bzf = NULL;
    UChar   ibuf[5000];
@@ -205,7 +205,7 @@ void compressStream ( FILE *stream, FILE *zStream )
 
 
 /*---------------------------------------------*/
-Bool uncompressStream ( FILE *zStream, FILE *stream )
+Bool wrapped_uncompressStream ( FILE *zStream, FILE *stream )
 {
    BZFILE* bzf = NULL;
    Int32   bzerr, bzerr_dummy, ret, nread, streamNo, i;
@@ -325,7 +325,7 @@ Bool uncompressStream ( FILE *zStream, FILE *stream )
 
 
 /*---------------------------------------------*/
-Bool testStream ( FILE *zStream )
+Bool wrapped_testStream ( FILE *zStream )
 {
    BZFILE* bzf = NULL;
    Int32   bzerr, bzerr_dummy, ret, nread, streamNo, i;

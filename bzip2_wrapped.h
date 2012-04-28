@@ -1,6 +1,6 @@
 typedef unsigned char   Bool;
 
-void compressStream ( FILE *stream, FILE *zStream );
-Bool uncompressStream ( FILE *zStream, FILE *stream );
-Bool testStream ( FILE *zStream );
+void wrapped_compressStream ( FILE *stream, FILE *zStream );
+Bool wrapped_uncompressStream ( FILE *zStream, FILE *stream );
+Bool wrapped_testStream ( FILE *zStream );
 
