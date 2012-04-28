@@ -50,3 +50,19 @@
 
 6. Fix the build to include the other files. Fix stupid mistakes. Move
    definitions that need to be shared (and can be safely!).
+
+7. Now we hit an interesting case:
+
+   "bzip2_wrapped.c:123: error: 'blockSize100k' undeclared (first use
+   in this function)"
+
+   blockSize100k is a global. Globals are, of course, potential
+   communication channels between the wrapped code and its parent. If
+   we're lucky, the communication is one way, from parent to child, as
+   it is in this case, and so we can simply make them const in the
+   wrapped functions. They will have the right values in the wrapped
+   function, because we have changed the call to a fork(). We use a
+   trick to make the compiler enforce this property. Note that we can
+   just assume this is so, and compiler errors will inform us if we
+   are incorrect.
+
