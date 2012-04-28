@@ -86,3 +86,10 @@
     but luckily the child never does anything but set it to NULL. So
     invent a new wrapped function that does this. Note that once more
     we leave dangling ends to be dealt with later.
+
+11. Continue mechanically. Note that we remove a cast on smallMode,
+    which could undo our constification.
+
+    Eventually, it all builds.
+
+    But there's one more thing to do...

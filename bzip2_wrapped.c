@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include "bzlib.h"
 #include "bzip2_wrapped.h"
@@ -21,6 +22,53 @@ static void invoke_clear_outputHandleJustInCase(void) {
   lc_send_to_parent("void", "clear_outputHandleJustInCase", "void");
 }
 
+static void invoke_configError(void) {
+  if (!lc_is_wrapped()) {
+    wrapped_configError();
+    return;
+  }
+  lc_send_to_parent("void", "configError", "void");
+}
+
+static void invoke_outOfMemory(void) {
+  if (!lc_is_wrapped()) {
+    wrapped_outOfMemory();
+    return;
+  }
+  lc_send_to_parent("void", "outOfMemory", "void");
+}
+
+static void invoke_ioError(void) {
+  if (!lc_is_wrapped()) {
+    wrapped_ioError();
+    return;
+  }
+  lc_send_to_parent("void", "ioError", "void");
+}
+
+static void invoke_panic(const char *msg) {
+  if (!lc_is_wrapped()) {
+    wrapped_panic(msg);
+    return;
+  }
+  lc_send_to_parent("void", "pani", "int string", errno, msg);
+}
+
+static void invoke_crcError(void) {
+  if (!lc_is_wrapped()) {
+    wrapped_crcError();
+    return;
+  }
+  lc_send_to_parent("void", "crcError", "void");
+}
+
+static void invoke_compressedStreamEOF(void) {
+  if (!lc_is_wrapped()) {
+    wrapped_compressedStreamEOF();
+    return;
+  }
+  lc_send_to_parent("void", "compressedStreamEOF", "void");
+}
 
 /*---------------------------------------------------*/
 /*--- An implementation of 64-bit ints.  Sigh.    ---*/
@@ -210,17 +258,17 @@ void wrapped_compressStream ( FILE *stream, FILE *zStream )
                         &nbytes_out_lo32, &nbytes_out_hi32 );
    switch (bzerr) {
       case BZ_CONFIG_ERROR:
-         configError(); break;
+         invoke_configError(); break;
       case BZ_MEM_ERROR:
-         outOfMemory (); break;
+         invoke_outOfMemory (); break;
       case BZ_IO_ERROR:
          errhandler_io:
-         ioError(); break;
+         invoke_ioError(); break;
       default:
-         panic ( "compress:unexpected error" );
+         invoke_panic ( "compress:unexpected error" );
    }
 
-   panic ( "compress:end" );
+   invoke_panic ( "compress:end" );
    /*notreached*/
 }
 
@@ -250,7 +298,7 @@ Bool wrapped_uncompressStream ( FILE *zStream, FILE *stream )
 
       bzf = BZ2_bzReadOpen ( 
                &bzerr, zStream, verbosity, 
-               (int)smallMode, unused, nUnused
+               smallMode, unused, nUnused
             );
       if (bzf == NULL || bzerr != BZ_OK) goto errhandler;
       streamNo++;
@@ -265,13 +313,13 @@ Bool wrapped_uncompressStream ( FILE *zStream, FILE *stream )
       if (bzerr != BZ_STREAM_END) goto errhandler;
 
       BZ2_bzReadGetUnused ( &bzerr, bzf, &unusedTmpV, &nUnused );
-      if (bzerr != BZ_OK) panic ( "decompress:bzReadGetUnused" );
+      if (bzerr != BZ_OK) invoke_panic ( "decompress:bzReadGetUnused" );
 
       unusedTmp = (UChar*)unusedTmpV;
       for (i = 0; i < nUnused; i++) unused[i] = unusedTmp[i];
 
       BZ2_bzReadClose ( &bzerr, bzf );
-      if (bzerr != BZ_OK) panic ( "decompress:bzReadGetUnused" );
+      if (bzerr != BZ_OK) invoke_panic ( "decompress:bzReadGetUnused" );
 
       if (nUnused == 0 && myfeof(zStream)) break;
    }
@@ -281,7 +329,7 @@ Bool wrapped_uncompressStream ( FILE *zStream, FILE *stream )
    if (stream != stdout) {
       Int32 fd = fileno ( stream );
       if (fd < 0) goto errhandler_io;
-      applySavedFileAttrToOutputFile ( fd );
+      invoke_applySavedFileAttrToOutputFile ( fd );
    }
    ret = fclose ( zStream );
    if (ret == EOF) goto errhandler_io;
@@ -291,10 +339,10 @@ Bool wrapped_uncompressStream ( FILE *zStream, FILE *stream )
    if (ret != 0) goto errhandler_io;
    if (stream != stdout) {
       ret = fclose ( stream );
-      outputHandleJustInCase = NULL;
+      invoke_clear_outputHandleJustInCase();
       if (ret == EOF) goto errhandler_io;
    }
-   outputHandleJustInCase = NULL;
+   invoke_clear_outputHandleJustInCase();
    if (verbosity >= 2) fprintf ( stderr, "\n    " );
    return True;
 
@@ -315,16 +363,16 @@ Bool wrapped_uncompressStream ( FILE *zStream, FILE *stream )
    BZ2_bzReadClose ( &bzerr_dummy, bzf );
    switch (bzerr) {
       case BZ_CONFIG_ERROR:
-         configError(); break;
+         invoke_configError(); break;
       case BZ_IO_ERROR:
          errhandler_io:
-         ioError(); break;
+         invoke_ioError(); break;
       case BZ_DATA_ERROR:
-         crcError();
+         invoke_crcError();
       case BZ_MEM_ERROR:
-         outOfMemory();
+         invoke_outOfMemory();
       case BZ_UNEXPECTED_EOF:
-         compressedStreamEOF();
+         invoke_compressedStreamEOF();
       case BZ_DATA_ERROR_MAGIC:
          if (zStream != stdin) fclose(zStream);
          if (stream != stdout) fclose(stream);
@@ -338,10 +386,10 @@ Bool wrapped_uncompressStream ( FILE *zStream, FILE *stream )
             return True;       
          }
       default:
-         panic ( "decompress:unexpected error" );
+         invoke_panic ( "decompress:unexpected error" );
    }
 
-   panic ( "decompress:end" );
+   invoke_panic ( "decompress:end" );
    return True; /*notreached*/
 }
 
@@ -367,7 +415,7 @@ Bool wrapped_testStream ( FILE *zStream )
 
       bzf = BZ2_bzReadOpen ( 
                &bzerr, zStream, verbosity, 
-               (int)smallMode, unused, nUnused
+               smallMode, unused, nUnused
             );
       if (bzf == NULL || bzerr != BZ_OK) goto errhandler;
       streamNo++;
@@ -379,13 +427,13 @@ Bool wrapped_testStream ( FILE *zStream )
       if (bzerr != BZ_STREAM_END) goto errhandler;
 
       BZ2_bzReadGetUnused ( &bzerr, bzf, &unusedTmpV, &nUnused );
-      if (bzerr != BZ_OK) panic ( "test:bzReadGetUnused" );
+      if (bzerr != BZ_OK) invoke_panic ( "test:bzReadGetUnused" );
 
       unusedTmp = (UChar*)unusedTmpV;
       for (i = 0; i < nUnused; i++) unused[i] = unusedTmp[i];
 
       BZ2_bzReadClose ( &bzerr, bzf );
-      if (bzerr != BZ_OK) panic ( "test:bzReadGetUnused" );
+      if (bzerr != BZ_OK) invoke_panic ( "test:bzReadGetUnused" );
       if (nUnused == 0 && myfeof(zStream)) break;
 
    }
@@ -403,16 +451,16 @@ Bool wrapped_testStream ( FILE *zStream )
       fprintf ( stderr, "%s: %s: ", progName, inName );
    switch (bzerr) {
       case BZ_CONFIG_ERROR:
-         configError(); break;
+         invoke_configError(); break;
       case BZ_IO_ERROR:
          errhandler_io:
-         ioError(); break;
+         invoke_ioError(); break;
       case BZ_DATA_ERROR:
          fprintf ( stderr,
                    "data integrity (CRC) error in data\n" );
          return False;
       case BZ_MEM_ERROR:
-         outOfMemory();
+         invoke_outOfMemory();
       case BZ_UNEXPECTED_EOF:
          fprintf ( stderr,
                    "file ends unexpectedly\n" );
@@ -430,9 +478,9 @@ Bool wrapped_testStream ( FILE *zStream )
             return True;       
          }
       default:
-         panic ( "test:unexpected error" );
+         invoke_panic ( "test:unexpected error" );
    }
 
-   panic ( "test:end" );
+   invoke_panic ( "test:end" );
    return True; /*notreached*/
 }
