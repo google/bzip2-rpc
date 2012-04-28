@@ -79,3 +79,10 @@
    applySavedFileAttrToOutputFile(), which would have automatically
    dealt with the rest of bzip2_wrapped.c, since it is static and so
    would not be available in bzip2.c.
+
+10. The next problem is interesting - a global that is changed in the
+    child, outputHandleJustInCase. This could have been awkward, since
+    it is a FILE *, and we can't directly pass a FILE * over a pipe,
+    but luckily the child never does anything but set it to NULL. So
+    invent a new wrapped function that does this. Note that once more
+    we leave dangling ends to be dealt with later.

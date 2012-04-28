@@ -21,6 +21,7 @@ Bool wrapped_testStream ( FILE *zStream );
 
 /* in the parent */
 void wrapped_applySavedFileAttrToOutputFile ( IntNative fd );
+void wrapped_clear_outputHandleJustInCase( void );
 
 /* in both */
 extern Int32   _blockSize100k;

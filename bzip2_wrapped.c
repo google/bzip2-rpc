@@ -13,6 +13,15 @@ static void invoke_applySavedFileAttrToOutputFile(int fd) {
   lc_send_to_parent("void", "applySavedFileAttrToOutputFile", "int", fd);
 }
 
+static void invoke_clear_outputHandleJustInCase(void) {
+  if (!lc_is_wrapped()) {
+    wrapped_clear_outputHandleJustInCase();
+    return;
+  }
+  lc_send_to_parent("void", "clear_outputHandleJustInCase", "void");
+}
+
+
 /*---------------------------------------------------*/
 /*--- An implementation of 64-bit ints.  Sigh.    ---*/
 /*--- Roll on widespread deployment of ANSI C9X ! ---*/
@@ -159,10 +168,10 @@ void wrapped_compressStream ( FILE *stream, FILE *zStream )
       if (fd < 0) goto errhandler_io;
       invoke_applySavedFileAttrToOutputFile ( fd );
       ret = fclose ( zStream );
-      outputHandleJustInCase = NULL;
+      invoke_clear_outputHandleJustInCase();
       if (ret == EOF) goto errhandler_io;
    }
-   outputHandleJustInCase = NULL;
+   invoke_clear_outputHandleJustInCase();
    if (ferror(stream)) goto errhandler_io;
    ret = fclose ( stream );
    if (ret == EOF) goto errhandler_io;
