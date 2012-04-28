@@ -11,3 +11,28 @@
 
    Obviously we will now get errors because of the missing
    functions. Add them to an appropriate new header.
+
+3. Compile.
+
+   Now the first error is:
+
+   "bzip2.c:746: warning: 'applySavedFileAttrToOutputFile' defined but
+   not used"
+
+   Without even looking, it is apparent that this function must only
+   be used from the wrapped code.
+
+   This function requires authority (it needs to be able to chmod), so
+   we have a choice: grant that authority to the wrapped functions, or
+   create a capability for it. We choose the latter.
+
+   This is accomplished by allowing the child to call the function
+   remotely, by using RPC over a pipe. For now, we only implement the
+   parent's side of that - i.e. unmarshalling the arguments, calling
+   the function, and returning a return code.
+
+   A small amount of inspection reveals that only the output file
+   should be chmod()ed, so we enforce that.
+
+   At this point we also need to include utility code that will be
+   part of Capsicum in the future.
