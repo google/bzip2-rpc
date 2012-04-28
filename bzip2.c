@@ -55,6 +55,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include "bzlib.h"
+#include "bzip2_wrapped.h"
 
 #define ERROR_IF_EOF(i)       { if ((i) == EOF)  ioError(); }
 #define ERROR_IF_NOT_ZERO(i)  { if ((i) != 0)    ioError(); }
@@ -159,7 +160,6 @@
 --*/
 
 typedef char            Char;
-typedef unsigned char   Bool;
 typedef unsigned char   UChar;
 typedef int             Int32;
 typedef unsigned int    UInt32;

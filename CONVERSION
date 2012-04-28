@@ -6,3 +6,8 @@
    compression and decompression library. A visual inspection shows
    that this is just the functions compressStream(),
    uncompressStream() and testStream().
+
+2. Compile.
+
+   Obviously we will now get errors because of the missing
+   functions. Add them to an appropriate new header.

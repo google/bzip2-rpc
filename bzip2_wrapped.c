@@ -1,5 +1,6 @@
+#include "bzip2_wrapped.c"
+
 /*---------------------------------------------*/
-static 
 void compressStream ( FILE *stream, FILE *zStream )
 {
    BZFILE* bzf = NULL;
@@ -103,7 +104,6 @@ void compressStream ( FILE *stream, FILE *zStream )
 
 
 /*---------------------------------------------*/
-static 
 Bool uncompressStream ( FILE *zStream, FILE *stream )
 {
    BZFILE* bzf = NULL;
@@ -224,7 +224,6 @@ Bool uncompressStream ( FILE *zStream, FILE *stream )
 
 
 /*---------------------------------------------*/
-static 
 Bool testStream ( FILE *zStream )
 {
    BZFILE* bzf = NULL;
