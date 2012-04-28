@@ -12,6 +12,9 @@ void wrapped_compressStream ( FILE *stream, FILE *zStream );
 Bool wrapped_uncompressStream ( FILE *zStream, FILE *stream );
 Bool wrapped_testStream ( FILE *zStream );
 
-extern Int32 _blockSize100k;
-#define       blockSize100k (*(const Int32 *)&_blockSize100k)
-
+extern Int32   _blockSize100k;
+#define         blockSize100k (*(const Int32 *)&_blockSize100k)
+extern Int32   _verbosity;
+#define         verbosity (*(const Int32 *)&_verbosity)
+extern Int32   _workFactor;
+#define         workFactor (*(const Int32 *)&_workFactor)
