@@ -1,5 +1,106 @@
 #include "bzip2_wrapped.c"
 
+/*---------------------------------------------------*/
+/*--- An implementation of 64-bit ints.  Sigh.    ---*/
+/*--- Roll on widespread deployment of ANSI C9X ! ---*/
+/*---------------------------------------------------*/
+
+typedef
+   struct { UChar b[8]; } 
+   UInt64;
+
+
+static
+void uInt64_from_UInt32s ( UInt64* n, UInt32 lo32, UInt32 hi32 )
+{
+   n->b[7] = (UChar)((hi32 >> 24) & 0xFF);
+   n->b[6] = (UChar)((hi32 >> 16) & 0xFF);
+   n->b[5] = (UChar)((hi32 >> 8)  & 0xFF);
+   n->b[4] = (UChar) (hi32        & 0xFF);
+   n->b[3] = (UChar)((lo32 >> 24) & 0xFF);
+   n->b[2] = (UChar)((lo32 >> 16) & 0xFF);
+   n->b[1] = (UChar)((lo32 >> 8)  & 0xFF);
+   n->b[0] = (UChar) (lo32        & 0xFF);
+}
+
+
+
+static
+double uInt64_to_double ( UInt64* n )
+{
+   Int32  i;
+   double base = 1.0;
+   double sum  = 0.0;
+   for (i = 0; i < 8; i++) {
+      sum  += base * (double)(n->b[i]);
+      base *= 256.0;
+   }
+   return sum;
+}
+
+
+static
+Bool uInt64_isZero ( UInt64* n )
+{
+   Int32 i;
+   for (i = 0; i < 8; i++)
+      if (n->b[i] != 0) return 0;
+   return 1;
+}
+
+
+/* Divide *n by 10, and return the remainder.  */
+static 
+Int32 uInt64_qrm10 ( UInt64* n )
+{
+   UInt32 rem, tmp;
+   Int32  i;
+   rem = 0;
+   for (i = 7; i >= 0; i--) {
+      tmp = rem * 256 + n->b[i];
+      n->b[i] = tmp / 10;
+      rem = tmp % 10;
+   }
+   return rem;
+}
+
+
+/* ... and the Whole Entire Point of all this UInt64 stuff is
+   so that we can supply the following function.
+*/
+static
+void uInt64_toAscii ( char* outbuf, UInt64* n )
+{
+   Int32  i, q;
+   UChar  buf[32];
+   Int32  nBuf   = 0;
+   UInt64 n_copy = *n;
+   do {
+      q = uInt64_qrm10 ( &n_copy );
+      buf[nBuf] = q + '0';
+      nBuf++;
+   } while (!uInt64_isZero(&n_copy));
+   outbuf[nBuf] = 0;
+   for (i = 0; i < nBuf; i++) 
+      outbuf[i] = buf[nBuf-i-1];
+}
+
+
+/*---------------------------------------------------*/
+/*--- Processing of complete files and streams    ---*/
+/*---------------------------------------------------*/
+
+/*---------------------------------------------*/
+static 
+Bool myfeof ( FILE* f )
+{
+   Int32 c = fgetc ( f );
+   if (c == EOF) return True;
+   ungetc ( c, f );
+   return False;
+}
+
+
 /*---------------------------------------------*/
 void compressStream ( FILE *stream, FILE *zStream )
 {

@@ -36,3 +36,6 @@
 
    At this point we also need to include utility code that will be
    part of Capsicum in the future.
+
+4. The remaining unused functions do not require authority, so simply
+   move them into the wrapped code.
