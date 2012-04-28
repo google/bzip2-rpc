@@ -114,7 +114,7 @@ static size_t lc_full_read(int fd, void *buffer, size_t count) {
   return n;
 }
 
-static int lc_read_string(int fd, char **result, uint32_t max) {
+int lc_read_string(int fd, char **result, uint32_t max) {
   uint32_t size;
 
   // FIXME: check for errors

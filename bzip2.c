@@ -206,6 +206,12 @@ void wrapped_clear_outputHandleJustInCase(void) {
   outputHandleJustInCase = NULL;
 }
 
+static
+void unwrap_clear_outputHandleJustInCase ( int fd ) {
+  wrapped_clear_outputHandleJustInCase();
+  lc_write_void(fd);
+}
+
 #undef workFactor
 #define workFactor _workFactor
 Int32   workFactor;
@@ -225,9 +231,18 @@ static void    unwrap_compressedStreamEOF ( int fd ) NORETURN;
 
 static int output_fd;
 
+#define CAP(x) { #x, unwrap_##x }
 static struct lc_capability caps[] = {
-  { "applySavedFileAttrToOutputFile", unwrap_applySavedFileAttrToOutputFile },
+  CAP(applySavedFileAttrToOutputFile),
+  CAP(clear_outputHandleJustInCase),
+  CAP(configError),
+  CAP(outOfMemory),
+  CAP(ioError),
+  CAP(panic),
+  CAP(crcError),
+  CAP(compressedStreamEOF),
 };
+#undef CAP
 
 // This is only needed to get the function types to match for
 // lc_wrap_filter().
@@ -243,7 +258,8 @@ static void compressStream(FILE *stream, FILE *zStream) {
   }
 
   output_fd = fileno(zStream);
-  lc_wrap_filter(call_compressStream, stream, zStream, caps, 1);
+  // FIXME: this only needs a subset of caps
+  lc_wrap_filter(call_compressStream, stream, zStream, caps, 8);
 }
 
 static int call_uncompressStream(FILE *zStream, FILE *stream) {
@@ -255,7 +271,7 @@ static Bool uncompressStream(FILE *zStream, FILE *stream) {
     return wrapped_uncompressStream(zStream, stream);
 
   output_fd = fileno(stream);
-  return lc_wrap_filter(call_uncompressStream, zStream, stream, caps, 1);
+  return lc_wrap_filter(call_uncompressStream, zStream, stream, caps, 8);
 }
 
 static int call_testStream(FILE *zStream, FILE *dummy) {
@@ -266,7 +282,8 @@ static Bool testStream(FILE *zStream) {
   if (!lc_available())
     return wrapped_testStream(zStream);
 
-  return lc_wrap_filter(call_testStream, zStream, NULL, NULL, 0);
+  // FIXME: this only needs a subset of caps
+  return lc_wrap_filter(call_testStream, zStream, NULL, caps, 8);
 }
 
 /*---------------------------------------------------*/
@@ -381,6 +398,17 @@ void wrapped_panic ( const Char* s )
    cleanUpAndFail( 3 );
 }
 
+static
+void unwrap_panic ( int fd ) {
+  int wrapped_errno;
+  char *str;
+
+  lc_read_int( fd, &wrapped_errno );
+  lc_read_string( fd, &str, 1024 );
+  wrapped_panic( str );
+  /* NOTREACHED */
+}
+
 
 /*---------------------------------------------*/
 void wrapped_crcError ( void )
@@ -392,6 +420,13 @@ void wrapped_crcError ( void )
    cadvise();
    cleanUpAndFail( 2 );
 }
+
+static
+void unwrap_crcError ( int fd ) {
+  wrapped_crcError();
+  /* NOTREACHED */
+}
+
 
 
 /*---------------------------------------------*/
@@ -409,6 +444,11 @@ void wrapped_compressedStreamEOF ( void )
   cleanUpAndFail( 2 );
 }
 
+static
+void unwrap_compressedStreamEOF ( int fd ) {
+  wrapped_crcError();
+  /* NOTREACHED */
+}
 
 /*---------------------------------------------*/
 void wrapped_ioError ( void )
@@ -420,6 +460,12 @@ void wrapped_ioError ( void )
    perror ( progName );
    showFileNames();
    cleanUpAndFail( 1 );
+}
+
+static
+void unwrap_ioError ( int fd ) {
+  wrapped_ioError();
+  /* NOTREACHED */
 }
 
 
@@ -500,6 +546,11 @@ void wrapped_outOfMemory ( void )
    cleanUpAndFail(1);
 }
 
+static
+void unwrap_outOfMemory ( int fd ) {
+  wrapped_outOfMemory();
+  /* NOTREACHED */
+}
 
 /*---------------------------------------------*/
 void wrapped_configError ( void )
@@ -514,6 +565,11 @@ void wrapped_configError ( void )
    exit(exitValue);
 }
 
+static
+void unwrap_configError ( int fd ) {
+  wrapped_configError();
+  /* NOTREACHED */
+}
 
 /*---------------------------------------------------*/
 /*--- The main driver machinery                   ---*/

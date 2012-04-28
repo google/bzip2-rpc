@@ -101,3 +101,9 @@
     we wrapped earlier. Luckily, there's a list in bzip2_wrapped.h, so
     we'll just haul those in and get back on track with errors. Note
     that the unwrap functions just take a file descriptor.
+
+13. Define the unwrappers. Note that you have to remember to add them
+    to caps[] and adjust the calls where it is used. Again, an IDL
+    would fix this.
+
+    Now we're done.

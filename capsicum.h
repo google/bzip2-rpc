@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <sys/types.h>
 
 int lc_available(void);
 
@@ -17,4 +18,4 @@ int lc_wrap_filter(int (*func)(FILE *in, FILE *out), FILE *in, FILE *out,
 
 void lc_write_void(int fd);
 int lc_read_int(int fd, int *result);
-
+int lc_read_string(int fd, char **result, uint32_t max);
