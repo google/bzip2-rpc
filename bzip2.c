@@ -214,7 +214,14 @@ static void    cleanUpAndFail        ( Int32 )       NORETURN;
 
 static void    copyFileName ( Char*, Char* );
 static void*   myMalloc     ( Int32 );
-static void    unwrap_applySavedFileAttrToOutputFile(int fd);
+static void    unwrap_applySavedFileAttrToOutputFile( int fd );
+static void    unwrap_clear_outputHandleJustInCase ( int fd );
+static void    unwrap_configError ( int fd ) NORETURN;
+static void    unwrap_outOfMemory ( int fd ) NORETURN;
+static void    unwrap_ioError ( int fd ) NORETURN;
+static void    unwrap_panic ( int fd ) NORETURN;
+static void    unwrap_crcError ( int fd ) NORETURN;
+static void    unwrap_compressedStreamEOF ( int fd ) NORETURN;
 
 static int output_fd;
 

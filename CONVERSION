@@ -93,3 +93,11 @@
     Eventually, it all builds.
 
     But there's one more thing to do...
+
+12. Sadly, error-driven development fails us here. It wouldn't if we
+    had an IDL.
+
+    We need to add unwrappers and capabilities for all the functions
+    we wrapped earlier. Luckily, there's a list in bzip2_wrapped.h, so
+    we'll just haul those in and get back on track with errors. Note
+    that the unwrap functions just take a file descriptor.
