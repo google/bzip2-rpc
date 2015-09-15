@@ -883,6 +883,11 @@ int BZ_API(BZ2_bzDecompressEnd)  ( bz_stream *strm )
 /*--- File I/O stuff                              ---*/
 /*---------------------------------------------------*/
 
+#define BZ_SETERRRET(eee)                 \
+{                                         \
+   if (bzerror != NULL) *bzerror = eee;   \
+}
+
 #define BZ_SETERR(eee)                    \
 {                                         \
    if (bzerror != NULL) *bzerror = eee;   \
@@ -958,7 +963,19 @@ BZFILE* BZ_API(BZ2_bzWriteOpen)
    return bzf;   
 }
 
-
+BZFILE* BZ_API(BZ2_bzWriteOpenFd)
+                    ( int*  bzerror,
+                      int   fd,
+                      int   blockSize100k,
+                      int   verbosity,
+                      int   workFactor )
+{
+    FILE *handle;
+    handle = fdopen(fd, "w");
+    if (handle == NULL)
+      { BZ_SETERRRET(BZ_PARAM_ERROR); return NULL; };
+    return BZ2_bzWriteOpen(bzerror, handle, blockSize100k, verbosity, workFactor);
+}
 
 /*---------------------------------------------------*/
 void BZ_API(BZ2_bzWrite)
@@ -1138,6 +1155,21 @@ BZFILE* BZ_API(BZ2_bzReadOpen)
    return bzf;   
 }
 
+BZFILE* BZ_API(BZ2_bzReadOpenFd)
+                   ( int*  bzerror,
+                     int   fd,
+                     int   verbosity,
+                     int   small,
+                     void* unused,
+                     int   nUnused )
+{
+    FILE *handle;
+
+    handle = fdopen(fd, "r");
+    if (handle == NULL)
+      { BZ_SETERRRET(BZ_PARAM_ERROR); return 0; };
+    return BZ2_bzReadOpen(bzerror, handle, verbosity, small, unused, nUnused);
+}
 
 /*---------------------------------------------------*/
 void BZ_API(BZ2_bzReadClose) ( int *bzerror, BZFILE *b )

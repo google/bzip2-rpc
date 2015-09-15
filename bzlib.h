@@ -141,8 +141,17 @@ BZ_EXTERN BZFILE* BZ_API(BZ2_bzReadOpen) (
       FILE* f, 
       int   verbosity, 
       int   small,
-      void* unused,    
-      int   nUnused 
+      void* unused,
+      int   nUnused
+   );
+
+BZ_EXTERN BZFILE* BZ_API(BZ2_bzReadOpenFd) (
+      int*  bzerror,
+      int   fd,
+      int   verbosity,
+      int   small,
+      void* unused,
+      int   nUnused
    );
 
 BZ_EXTERN void BZ_API(BZ2_bzReadClose) ( 
@@ -170,6 +179,14 @@ BZ_EXTERN BZFILE* BZ_API(BZ2_bzWriteOpen) (
       int   blockSize100k, 
       int   verbosity, 
       int   workFactor 
+  );
+
+BZ_EXTERN BZFILE* BZ_API(BZ2_bzWriteOpenFd) (
+      int*  bzerror,
+      int   fd,
+      int   blockSize100k,
+      int   verbosity,
+      int   workFactor
    );
 
 BZ_EXTERN void BZ_API(BZ2_bzWrite) ( 
