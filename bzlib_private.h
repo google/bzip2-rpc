@@ -46,6 +46,15 @@ typedef unsigned int    UInt32;
 typedef short           Int16;
 typedef unsigned short  UInt16;
 
+typedef struct { UChar b[8]; } UInt64;
+
+
+void uInt64_from_UInt32s ( UInt64* n, UInt32 lo32, UInt32 hi32 );
+double uInt64_to_double ( UInt64* n );
+Bool uInt64_isZero ( UInt64* n );
+Int32 uInt64_qrm10 ( UInt64* n );
+void uInt64_toAscii ( char* outbuf, UInt64* n );
+
 #define True  ((Bool)1)
 #define False ((Bool)0)
 

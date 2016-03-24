@@ -213,6 +213,28 @@ BZ_EXTERN void BZ_API(BZ2_bzWriteClose64) (
       unsigned int* nbytes_out_lo32, 
       unsigned int* nbytes_out_hi32
    );
+
+BZ_EXTERN int BZ_API(BZ2_bzCompressStream) (
+      int        ifd,
+      int        ofd,
+      int        blockSize100k, 
+      int        verbosity, 
+      int        workFactor 
+    );
+
+BZ_EXTERN int BZ_API(BZ2_bzDecompressStream) (
+      int        ifd,
+      int        ofd,
+      int        verbosity, 
+      int        small
+    );
+
+BZ_EXTERN int BZ_API(BZ2_bzTestStream) (
+      int        ifd,
+      int        verbosity, 
+      int        small
+    );
+
 #endif
 
 

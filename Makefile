@@ -33,6 +33,7 @@ OBJS= blocksort.o  \
       randtable.o  \
       compress.o   \
       decompress.o \
+      stream.o     \
       bzlib.o
 
 all: libbz2.a bzip2 bzip2recover test
@@ -126,6 +127,8 @@ compress.o: compress.c
 	$(CC) $(CFLAGS) -c compress.c
 decompress.o: decompress.c
 	$(CC) $(CFLAGS) -c decompress.c
+stream.o: stream.c
+	$(CC) $(CFLAGS) -c stream.c
 bzlib.o: bzlib.c
 	$(CC) $(CFLAGS) -c bzlib.c
 bzip2.o: bzip2.c
@@ -148,6 +151,7 @@ dist: check manual
 	   $(DISTNAME)/randtable.c \
 	   $(DISTNAME)/compress.c \
 	   $(DISTNAME)/decompress.c \
+	   $(DISTNAME)/stream.c \
 	   $(DISTNAME)/bzlib.c \
 	   $(DISTNAME)/bzip2.c \
 	   $(DISTNAME)/bzip2recover.c \
