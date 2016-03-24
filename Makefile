@@ -19,6 +19,7 @@ CC=gcc
 AR=ar
 RANLIB=ranlib
 LDFLAGS=
+LDLIBS=-lcaprights
 
 BIGFILES=-D_FILE_OFFSET_BITS=64
 CFLAGS=-Wall -Winline -O2 -g $(BIGFILES)
@@ -38,7 +39,7 @@ OBJS= blocksort.o  \
 all: libbz2.a bzip2 bzip2recover test
 
 bzip2: libbz2.a bzip2.o bzip2_wrapped.o capsicum.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o bzip2 bzip2.o bzip2_wrapped.o capsicum.o -L. -lbz2
+	$(CC) $(CFLAGS) $(LDFLAGS) -o bzip2 bzip2.o bzip2_wrapped.o capsicum.o -L. -lbz2 $(LDLIBS)
 
 bzip2recover: bzip2recover.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o bzip2recover bzip2recover.o
