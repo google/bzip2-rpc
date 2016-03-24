@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/capability.h>
+#include <sys/capsicum.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -20,7 +20,7 @@ int lc_available(void) {
    if (!known) {
       known = 1;
       cap_rights_t rights;
-      if (cap_getrights(0, &rights) == 0 || errno != ENOSYS)
+      if (cap_rights_get(0, &rights) == 0 || errno != ENOSYS)
 	 available = 1;
    }
    return available;
@@ -62,24 +62,6 @@ void lc_closeallbut(const int *fds, const int nfds) {
     continue;
   }
 }   
-
-static int lc_limitfd(int fd, cap_rights_t rights)
-{
-  int fd_cap;
-  int error;
-  
-  fd_cap = cap_new(fd, rights);
-  if (fd_cap < 0)
-    return -1;
-  if (dup2(fd_cap, fd) < 0) {
-    error = errno;
-    close(fd_cap);
-    errno = error;
-    return -1;
-  }
-  close(fd_cap);
-  return 0;
-}
 
 static int lc_parent_fd;
 
@@ -221,15 +203,19 @@ int lc_wrap_filter(int (*func)(FILE *in, FILE *out), FILE *in, FILE *out,
     }
   } else { 
     /* Child process */
+    cap_rights_t rights_r, rights_w, rights_rw;
     int fds[4];
 
     lc_wrapped = 1;
     close(pfds[0]);
     lc_parent_fd = pfds[1];
-    if(lc_limitfd(ifd, CAP_READ | CAP_SEEK) < 0
-       || lc_limitfd(ofd, CAP_WRITE | CAP_SEEK) < 0
-       // FIXME: CAP_SEEK should not be needed!
-       || lc_limitfd(lc_parent_fd, CAP_READ | CAP_WRITE | CAP_SEEK) < 0) {
+    cap_rights_init(&rights_r, CAP_READ, CAP_SEEK);
+    // FIXME: CAP_SEEK should not be needed!
+    cap_rights_init(&rights_w, CAP_WRITE, CAP_SEEK);
+    cap_rights_init(&rights_rw, CAP_READ, CAP_WRITE, CAP_SEEK);
+    if(cap_rights_limit(ifd, &rights_r) < 0
+       || cap_rights_limit(ofd, &rights_w) < 0
+       || cap_rights_limit(lc_parent_fd, &rights_rw) < 0) {
       lc_panic("Cannot limit descriptors");
     }
     fds[0] = 2;
