@@ -10,6 +10,8 @@
 #include <string.h>
 #include <sys/capsicum.h>
 #include <sys/resource.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -181,7 +183,7 @@ int lc_wrap_filter(int (*func)(FILE *in, FILE *out), FILE *in, FILE *out,
   ifd = fileno(in);
   ofd = fileno(out);
 
-  if (pipe(pfds) < 0)
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, pfds) < 0)
     lc_panic("Cannot pipe");
 
   if ((pid = fork()) < 0)
