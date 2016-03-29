@@ -895,7 +895,7 @@ int BZ_API(BZ2_bzDecompressEnd)  ( bz_stream *strm )
 }
 
 typedef 
-   struct {
+   struct bzF {
       FILE*     handle;
       Char      buf[BZ_MAX_UNUSED];
       Int32     bufN;
@@ -981,7 +981,7 @@ BZFILE* BZ_API(BZ2_bzWriteOpenFd)
 void BZ_API(BZ2_bzWrite)
              ( int*    bzerror, 
                BZFILE* b, 
-               void*   buf, 
+               const void* buf, 
                int     len )
 {
    Int32 n, n2, ret;
@@ -1106,7 +1106,7 @@ BZFILE* BZ_API(BZ2_bzReadOpen)
                      FILE* f, 
                      int   verbosity,
                      int   small,
-                     void* unused,
+                     const void* unused,
                      int   nUnused )
 {
    bzFile* bzf = NULL;
@@ -1160,7 +1160,7 @@ BZFILE* BZ_API(BZ2_bzReadOpenFd)
                      int   fd,
                      int   verbosity,
                      int   small,
-                     void* unused,
+                     const void* unused,
                      int   nUnused )
 {
     FILE *handle;
@@ -1253,7 +1253,7 @@ int BZ_API(BZ2_bzRead)
 void BZ_API(BZ2_bzReadGetUnused) 
                      ( int*    bzerror, 
                        BZFILE* b, 
-                       void**  unused, 
+                       const void** unused, 
                        int*    nUnused )
 {
    bzFile* bzf = (bzFile*)b;
@@ -1279,7 +1279,7 @@ void BZ_API(BZ2_bzReadGetUnused)
 int BZ_API(BZ2_bzBuffToBuffCompress) 
                          ( char*         dest, 
                            unsigned int* destLen,
-                           char*         source, 
+                           const char*   source, 
                            unsigned int  sourceLen,
                            int           blockSize100k, 
                            int           verbosity, 
@@ -1331,7 +1331,7 @@ int BZ_API(BZ2_bzBuffToBuffCompress)
 int BZ_API(BZ2_bzBuffToBuffDecompress) 
                            ( char*         dest, 
                              unsigned int* destLen,
-                             char*         source, 
+                             const char*   source, 
                              unsigned int  sourceLen,
                              int           small,
                              int           verbosity )
@@ -1521,7 +1521,7 @@ int BZ_API(BZ2_bzread) (BZFILE* b, void* buf, int len )
 
 
 /*---------------------------------------------------*/
-int BZ_API(BZ2_bzwrite) (BZFILE* b, void* buf, int len )
+int BZ_API(BZ2_bzwrite) (BZFILE* b, const void* buf, int len )
 {
    int bzerr;
 

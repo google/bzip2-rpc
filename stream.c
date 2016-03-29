@@ -176,7 +176,7 @@ int BZ_API(BZ2_bzDecompressStream)( int        ifd,
    UChar   obuf[5000];
    UChar   unused[BZ_MAX_UNUSED];
    Int32   nUnused;
-   void*   unusedTmpV;
+   const void* unusedTmpV;
    UChar*  unusedTmp;
 
    nUnused = 0;
@@ -241,7 +241,7 @@ int BZ_API(BZ2_bzTestStream)( int        ifd,
    UChar   obuf[5000];
    UChar   unused[BZ_MAX_UNUSED];
    Int32   nUnused;
-   void*   unusedTmpV;
+   const void* unusedTmpV;
    UChar*  unusedTmp;
 
    nUnused = 0;
