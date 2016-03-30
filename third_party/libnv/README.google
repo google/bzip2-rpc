@@ -1,0 +1,12 @@
+URL:
+  https://svnweb.freebsd.org/base/head/lib/libnv/?revision=291939
+  https://svnweb.freebsd.org/base/head/sys/contrib/libnv/?revision=291939
+  https://svnweb.freebsd.org/base/head/share/man/man9/nv.9?revision=291939
+Version: r291939
+License: BSD
+License File: LICENSE
+Description: Name/value pairs library.
+  The libnv library allows to easily manage name value pairs as well as
+  send and receive them over sockets.
+Local Modifications:
+  - None yet.
