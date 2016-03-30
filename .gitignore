@@ -8,3 +8,5 @@ bzip2-shared
 libbz2.so.*
 bzip2-1.0*
 bzip2-1.0*.tar.gz
+bz2-driver-libnv
+bzip2-libnv

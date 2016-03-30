@@ -21,7 +21,7 @@ RANLIB=ranlib
 LDFLAGS=
 
 BIGFILES=-D_FILE_OFFSET_BITS=64
-CFLAGS=-Wall -Winline -O2 -g $(BIGFILES)
+CFLAGS=-Wall -Winline -O2 -g $(BIGFILES) -Ithird_party/libnv
 
 # Where you want it installed when you do 'make install'
 PREFIX=/usr/local
@@ -41,13 +41,23 @@ NVOBJS= dnvlist.o  \
         nvpair.o   \
         msgio.o
 
-all: libbz2.a bzip2 bzip2recover libnv.a
+all: libbz2.a libbz2-libnv.a bzip2 bzip2-libnv bz2-driver-libnv bzip2recover libnv.a
 
 bzip2: libbz2.a bzip2.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bzip2.o -L. -lbz2
 
+bzip2-libnv: libbz2-libnv.a libnv.a bzip2.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bzip2.o -L. -lbz2-libnv -lnv
+
 bzip2recover: bzip2recover.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bzip2recover.o
+
+bz2-driver-libnv: libbz2.a libnv.a bz2-driver-libnv.o rpc-util.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bz2-driver-libnv.o rpc-util.o -L. -lbz2 -lnv
+
+libbz2-libnv.a: bz2-stub-libnv.o rpc-util.o
+	rm -f $@
+	$(AR) cq $@ $^
 
 libbz2.a: $(OBJS)
 	rm -f $@
@@ -62,8 +72,11 @@ libnv.a: $(NVOBJS)
 	$(AR) cq libnv.a $(NVOBJS)
 
 check: test
-test: bzip2
+test: test-direct test-libnv
+test-direct: bzip2
 	./test-run.sh ./bzip2
+test-libnv: bzip2-libnv bz2-driver-libnv
+	./test-run.sh ./bzip2-libnv
 
 install: bzip2 bzip2recover
 	if ( test ! -d $(PREFIX)/bin ) ; then mkdir -p $(PREFIX)/bin ; fi
@@ -107,7 +120,8 @@ install: bzip2 bzip2recover
 clean:
 	rm -f *.o libbz2.a libnv.a bzip2 bzip2recover \
 	sample1.rb2 sample2.rb2 sample3.rb2 \
-	sample1.tst sample2.tst sample3.tst
+	sample1.tst sample2.tst sample3.tst \
+	libbz2-libnv.a bz2-driver-libnv bzip2-libnv
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
