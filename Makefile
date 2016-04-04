@@ -5,7 +5,7 @@
 # bzip2/libbzip2 version 1.0.6 of 6 September 2010
 # Copyright (C) 1996-2010 Julian Seward <jseward@bzip.org>
 #
-# Please read the WARNING, DISCLAIMER and PATENTS sections in the 
+# Please read the WARNING, DISCLAIMER and PATENTS sections in the
 # README file.
 #
 # This program is released under the terms of the license contained
@@ -36,39 +36,25 @@ OBJS= blocksort.o  \
       stream.o     \
       bzlib.o
 
-all: libbz2.a bzip2 bzip2recover test
+all: libbz2.a bzip2 bzip2recover
 
 bzip2: libbz2.a bzip2.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o bzip2 bzip2.o -L. -lbz2
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bzip2.o -L. -lbz2
 
 bzip2recover: bzip2recover.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o bzip2recover bzip2recover.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bzip2recover.o
 
 libbz2.a: $(OBJS)
-	rm -f libbz2.a
-	$(AR) cq libbz2.a $(OBJS)
+	rm -f $@
+	$(AR) cq $@ $(OBJS)
 	@if ( test -f $(RANLIB) -o -f /usr/bin/ranlib -o \
 		-f /bin/ranlib -o -f /usr/ccs/bin/ranlib ) ; then \
-		echo $(RANLIB) libbz2.a ; \
-		$(RANLIB) libbz2.a ; \
+		$(RANLIB) $@ ; \
 	fi
 
 check: test
 test: bzip2
-	@cat words1
-	./bzip2 -1  < sample1.ref > sample1.rb2
-	./bzip2 -2  < sample2.ref > sample2.rb2
-	./bzip2 -3  < sample3.ref > sample3.rb2
-	./bzip2 -d  < sample1.bz2 > sample1.tst
-	./bzip2 -d  < sample2.bz2 > sample2.tst
-	./bzip2 -ds < sample3.bz2 > sample3.tst
-	cmp sample1.bz2 sample1.rb2 
-	cmp sample2.bz2 sample2.rb2
-	cmp sample3.bz2 sample3.rb2
-	cmp sample1.tst sample1.ref
-	cmp sample2.tst sample2.ref
-	cmp sample3.tst sample3.ref
-	@cat words3
+	./test-run.sh ./bzip2
 
 install: bzip2 bzip2recover
 	if ( test ! -d $(PREFIX)/bin ) ; then mkdir -p $(PREFIX)/bin ; fi
@@ -109,32 +95,13 @@ install: bzip2 bzip2recover
 	echo ".so man1/bzmore.1" > $(PREFIX)/man/man1/bzless.1
 	echo ".so man1/bzdiff.1" > $(PREFIX)/man/man1/bzcmp.1
 
-clean: 
+clean:
 	rm -f *.o libbz2.a bzip2 bzip2recover \
 	sample1.rb2 sample2.rb2 sample3.rb2 \
 	sample1.tst sample2.tst sample3.tst
 
-blocksort.o: blocksort.c
-	@cat words0
-	$(CC) $(CFLAGS) -c blocksort.c
-huffman.o: huffman.c
-	$(CC) $(CFLAGS) -c huffman.c
-crctable.o: crctable.c
-	$(CC) $(CFLAGS) -c crctable.c
-randtable.o: randtable.c
-	$(CC) $(CFLAGS) -c randtable.c
-compress.o: compress.c
-	$(CC) $(CFLAGS) -c compress.c
-decompress.o: decompress.c
-	$(CC) $(CFLAGS) -c decompress.c
-stream.o: stream.c
-	$(CC) $(CFLAGS) -c stream.c
-bzlib.o: bzlib.c
-	$(CC) $(CFLAGS) -c bzlib.c
-bzip2.o: bzip2.c
-	$(CC) $(CFLAGS) -c bzip2.c
-bzip2recover.o: bzip2recover.c
-	$(CC) $(CFLAGS) -c bzip2recover.c
+%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 
 distclean: clean
@@ -207,7 +174,7 @@ dist: check manual
 # For rebuilding the manual from sources on my SuSE 9.1 box
 
 MANUAL_SRCS= 	bz-common.xsl bz-fo.xsl bz-html.xsl bzip.css \
-		entities.xml manual.xml 
+		entities.xml manual.xml
 
 manual: manual.html manual.ps manual.pdf
 
