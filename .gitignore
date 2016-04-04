@@ -12,3 +12,9 @@ bz2-driver-libnv
 bzip2-libnv
 bz2-driver-dbus
 bzip2-dbus
+bz2-driver-grpc
+bzip2-grpc
+bzlib.grpc.pb.cc
+bzlib.grpc.pb.h
+bzlib.pb.cc
+bzlib.pb.h

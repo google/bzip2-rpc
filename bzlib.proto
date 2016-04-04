@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package bz2;
+
+// Service definition for bzlib.
+service Bz2 {
+  rpc CompressStream (CompressStreamRequest) returns (CompressStreamReply) {}
+  rpc DecompressStream (DecompressStreamRequest) returns (DecompressStreamReply) {}
+  rpc TestStream (TestStreamRequest) returns (TestStreamReply) {}
+  rpc LibVersion (LibVersionRequest) returns (LibVersionReply) {}
+}
+
+message CompressStreamRequest {
+  int32 ifd = 1;
+  int32 ofd = 2;
+  int32 blockSize100k = 3;
+  int32 verbosity = 4;
+  int32 workFactor = 5;
+}
+message CompressStreamReply {
+  int32 result = 1;
+}
+
+message DecompressStreamRequest {
+  int32 ifd = 1;
+  int32 ofd = 2;
+  int32 verbosity = 3;
+  int32 small = 4;
+}
+message DecompressStreamReply {
+  int32 result = 1;
+}
+
+message TestStreamRequest {
+  int32 ifd = 1;
+  int32 verbosity = 2;
+  int32 small = 3;
+}
+
+message TestStreamReply {
+  int32 result = 1;
+}
+
+message LibVersionRequest {
+}
+message LibVersionReply {
+  string version = 1;
+}
+
