@@ -18,3 +18,7 @@ bzlib.grpc.pb.cc
 bzlib.grpc.pb.h
 bzlib.pb.cc
 bzlib.pb.h
+bz2-driver-capnp
+bzip2-capnp
+bzlib.capnp.c++
+bzlib.capnp.h

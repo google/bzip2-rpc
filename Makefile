@@ -47,9 +47,9 @@ NVOBJS= dnvlist.o  \
 GRPC_SRC = bzlib.grpc.pb.cc bzlib.pb.cc
 GRPC_OBJS = bzlib.grpc.pb.o bzlib.pb.o
 
-PROGS = bzip2 bzip2recover bzip2-libnv bzip2-dbus bzip2-grpc
-DRIVERS = bz2-driver-libnv bz2-driver-dbus bz2-driver-grpc
-LIBS = libbz2.a libnv.a libbz2-libnv.a libbz2-dbus.a libbz2-grpc.a
+PROGS = bzip2 bzip2recover bzip2-libnv bzip2-dbus bzip2-grpc bzip2-capnp
+DRIVERS = bz2-driver-libnv bz2-driver-dbus bz2-driver-grpc bz2-driver-capnp
+LIBS = libbz2.a libnv.a libbz2-libnv.a libbz2-dbus.a libbz2-grpc.a libbz2-capnp.a
 
 all: $(LIBS) $(PROGS) $(DRIVERS)
 
@@ -65,6 +65,9 @@ bzip2-dbus: libbz2-dbus.a bzip2.o
 bzip2-grpc: libbz2-grpc.a bzip2.o
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ bzip2.o -L. -lbz2-grpc -lgrpc++_unsecure -lgrpc -lprotobuf -lpthread -ldl
 
+bzip2-capnp: libbz2-capnp.a bzip2.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ bzip2.o -L. -lbz2-capnp -lcapnp-rpc -lcapnp -lkj-async -lkj
+
 bzip2recover: bzip2recover.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bzip2recover.o
 
@@ -77,6 +80,9 @@ bz2-driver-dbus: libbz2.a bz2-driver-dbus.o rpc-util.o
 bz2-driver-grpc: libbz2.a bz2-driver-grpc.o rpc-util.o $(GRPC_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ bz2-driver-grpc.o rpc-util.o $(GRPC_OBJS) -L. -lbz2 -lgrpc++_unsecure -lgrpc -lprotobuf -lpthread -ldl
 
+bz2-driver-capnp: libbz2.a bz2-driver-capnp.o bzlib.capnp.o rpc-util.o
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ bz2-driver-capnp.o bzlib.capnp.o rpc-util.o -L. -lbz2 -lcapnp-rpc -lcapnp -lkj-async -lkj
+
 libbz2-libnv.a: bz2-stub-libnv.o rpc-util.o
 	rm -f $@
 	$(AR) cq $@ $^
@@ -86,6 +92,10 @@ libbz2-dbus.a: bz2-stub-dbus.o rpc-util.o
 	$(AR) cq $@ $^
 
 libbz2-grpc.a: bz2-stub-grpc.o rpc-util.o $(GRPC_OBJS)
+	rm -f $@
+	$(AR) cq $@ $^
+
+libbz2-capnp.a: bz2-stub-capnp.o rpc-util.o bzlib.capnp.o
 	rm -f $@
 	$(AR) cq $@ $^
 
@@ -102,7 +112,7 @@ libnv.a: $(NVOBJS)
 	$(AR) cq libnv.a $(NVOBJS)
 
 check: test
-test: test-direct test-libnv test-dbus test-grpc
+test: test-direct test-libnv test-dbus test-grpc test-capnp
 test-direct: bzip2
 	./test-run.sh ./bzip2
 test-libnv: bzip2-libnv bz2-driver-libnv
@@ -111,6 +121,8 @@ test-dbus: bzip2-dbus bz2-driver-dbus
 	./test-run.sh ./bzip2-dbus
 test-grpc: bzip2-grpc bz2-driver-grpc
 	./test-run.sh ./bzip2-grpc
+test-capnp: bzip2-capnp bz2-driver-capnp
+	./test-run.sh ./bzip2-capnp
 
 install: bzip2 bzip2recover
 	if ( test ! -d $(PREFIX)/bin ) ; then mkdir -p $(PREFIX)/bin ; fi
@@ -164,11 +176,18 @@ clean:
 	$(CC) $(CFLAGS) -c $< -o $@
 %.o: %.cc
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+%.o: %.c++
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 bzlib.pb.cc: bzlib.proto
 	protoc --cpp_out=. $<
 bzlib.grpc.pb.cc: bzlib.proto
 	protoc --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
 bz2-stub-grpc.o : bzlib.grpc.pb.cc bzlib.pb.cc
+bzlib.capnp.c++: bzlib.capnp
+	capnp compile -oc++ $<
+%.capnp:  # disable implicit rule
+
+bz2-stub-capnp.o : bzlib.capnp.c++
 
 distclean: clean
 	rm -f manual.ps manual.html manual.pdf
