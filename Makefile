@@ -21,7 +21,7 @@ RANLIB=ranlib
 LDFLAGS=
 
 BIGFILES=-D_FILE_OFFSET_BITS=64
-CFLAGS=-Wall -Winline -O2 -g $(BIGFILES) -Ithird_party/libnv
+CFLAGS=-Wall -Winline -O2 -g $(BIGFILES) -Ithird_party/libnv -I/usr/include/dbus-1.0 -I/usr/lib/x86_64-linux-gnu/dbus-1.0/include
 
 # Where you want it installed when you do 'make install'
 PREFIX=/usr/local
@@ -41,7 +41,7 @@ NVOBJS= dnvlist.o  \
         nvpair.o   \
         msgio.o
 
-all: libbz2.a libbz2-libnv.a bzip2 bzip2-libnv bz2-driver-libnv bzip2recover libnv.a
+all: libbz2.a libbz2-libnv.a libbz2-dbus.a bzip2 bzip2-libnv bzip2-dbus bz2-driver-libnv bz2-driver-dbus bzip2recover libnv.a
 
 bzip2: libbz2.a bzip2.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bzip2.o -L. -lbz2
@@ -49,13 +49,23 @@ bzip2: libbz2.a bzip2.o
 bzip2-libnv: libbz2-libnv.a libnv.a bzip2.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bzip2.o -L. -lbz2-libnv -lnv
 
+bzip2-dbus: libbz2-dbus.a bzip2.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bzip2.o -L. -lbz2-dbus -ldbus-1
+
 bzip2recover: bzip2recover.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bzip2recover.o
 
 bz2-driver-libnv: libbz2.a libnv.a bz2-driver-libnv.o rpc-util.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bz2-driver-libnv.o rpc-util.o -L. -lbz2 -lnv
 
+bz2-driver-dbus: libbz2.a bz2-driver-dbus.o rpc-util.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bz2-driver-dbus.o rpc-util.o -L. -lbz2 -ldbus-1
+
 libbz2-libnv.a: bz2-stub-libnv.o rpc-util.o
+	rm -f $@
+	$(AR) cq $@ $^
+
+libbz2-dbus.a: bz2-stub-dbus.o rpc-util.o
 	rm -f $@
 	$(AR) cq $@ $^
 
@@ -72,11 +82,13 @@ libnv.a: $(NVOBJS)
 	$(AR) cq libnv.a $(NVOBJS)
 
 check: test
-test: test-direct test-libnv
+test: test-direct test-libnv test-dbus
 test-direct: bzip2
 	./test-run.sh ./bzip2
 test-libnv: bzip2-libnv bz2-driver-libnv
 	./test-run.sh ./bzip2-libnv
+test-dbus: bzip2-dbus bz2-driver-dbus
+	./test-run.sh ./bzip2-dbus
 
 install: bzip2 bzip2recover
 	if ( test ! -d $(PREFIX)/bin ) ; then mkdir -p $(PREFIX)/bin ; fi
@@ -121,7 +133,8 @@ clean:
 	rm -f *.o libbz2.a libnv.a bzip2 bzip2recover \
 	sample1.rb2 sample2.rb2 sample3.rb2 \
 	sample1.tst sample2.tst sample3.tst \
-	libbz2-libnv.a bz2-driver-libnv bzip2-libnv
+	libbz2-libnv.a bz2-driver-libnv bzip2-libnv \
+	libbz2-dbus.a bz2-driver-dbus bzip2-dbus
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
