@@ -22,3 +22,4 @@ bz2-driver-capnp
 bzip2-capnp
 bzlib.capnp.c++
 bzlib.capnp.h
+README.html
