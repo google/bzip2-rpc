@@ -1,0 +1,10 @@
+*.o
+*.a
+bzip2
+bzip2recover
+sample[123].rb2
+sample[123].tst
+bzip2-shared
+libbz2.so.*
+bzip2-1.0*
+bzip2-1.0*.tar.gz
