@@ -27,17 +27,15 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: head/sys/contrib/libnv/nvlist_impl.h 286796 2015-08-15 06:34:49Z oshogbo $
+ * $FreeBSD$
  */
 
 #ifndef	_NVLIST_IMPL_H_
 #define	_NVLIST_IMPL_H_
 
-#include <sys/nv.h>
-
-#ifndef _KERNEL
 #include <stdint.h>
-#endif
+
+#include "nv.h"
 
 nvpair_t *nvlist_get_nvpair_parent(const nvlist_t *nvl);
 const unsigned char *nvlist_unpack_header(nvlist_t *nvl,

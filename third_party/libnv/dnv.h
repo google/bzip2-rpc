@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: head/sys/sys/dnv.h 285130 2015-07-04 10:33:33Z oshogbo $
+ * $FreeBSD$
  */
 
 #ifndef	_DNV_H_
@@ -34,11 +34,13 @@
 
 #include <sys/cdefs.h>
 
-#ifndef _KERNEL
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#ifndef __printflike
+#define __printflike(A, B)	__attribute__ ((__format__ (__printf__, A, B)))
 #endif
 
 #ifndef	_NVLIST_T_DECLARED
@@ -48,8 +50,9 @@ struct nvlist;
 typedef struct nvlist nvlist_t;
 #endif
 
-__BEGIN_DECLS
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 /*
  * The dnvlist_get functions returns value associated with the given name.
  * If it returns a pointer, the pointer represents internal buffer and should
@@ -80,6 +83,8 @@ nvlist_t *dnvlist_take_nvlist(nvlist_t *nvl, const char *name, nvlist_t *defval)
 int dnvlist_take_descriptor(nvlist_t *nvl, const char *name, int defval);
 void *dnvlist_take_binary(nvlist_t *nvl, const char *name, size_t *sizep, void *defval, size_t defsize);
 
-__END_DECLS
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* !_DNV_H_ */

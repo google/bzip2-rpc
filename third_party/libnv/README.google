@@ -9,4 +9,6 @@ Description: Name/value pairs library.
   The libnv library allows to easily manage name value pairs as well as
   send and receive them over sockets.
 Local Modifications:
-  - None yet.
+  - Drop _KERNEL macroing, as this version is only ever in userspace.
+  - Add extern "C" {} wrapper to header.
+  - Support Linux credential transfer with struct ucred.

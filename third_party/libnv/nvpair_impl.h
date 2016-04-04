@@ -27,18 +27,16 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: head/sys/contrib/libnv/nvpair_impl.h 286796 2015-08-15 06:34:49Z oshogbo $
+ * $FreeBSD$
  */
 
 #ifndef	_NVPAIR_IMPL_H_
 #define	_NVPAIR_IMPL_H_
 
-#include <sys/nv.h>
+#include "nv.h"
 #include <sys/queue.h>
 
-#ifndef _KERNEL
 #include <stdint.h>
-#endif
 
 TAILQ_HEAD(nvl_head, nvpair);
 

@@ -27,11 +27,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
+#define _GNU_SOURCE
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/lib/libnv/msgio.c 271578 2014-09-14 09:27:12Z pjd $");
 
-#include <sys/param.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 
 #include <errno.h>
@@ -46,6 +45,7 @@ __FBSDID("$FreeBSD: head/lib/libnv/msgio.c 271578 2014-09-14 09:27:12Z pjd $");
 #include <pjdlog.h>
 #endif
 
+#include "local.h"
 #include "common_impl.h"
 #include "msgio.h"
 
@@ -56,7 +56,7 @@ __FBSDID("$FreeBSD: head/lib/libnv/msgio.c 271578 2014-09-14 09:27:12Z pjd $");
 #define	PJDLOG_ABORT(...)		abort()
 #endif
 
-#define	PKG_MAX_SIZE	(MCLBYTES / CMSG_SPACE(sizeof(int)) - 1)
+#define	PKG_MAX_SIZE	1
 
 static int
 msghdr_add_fd(struct cmsghdr *cmsg, int fd)
@@ -163,13 +163,10 @@ msg_send(int sock, const struct msghdr *msg)
 int
 cred_send(int sock)
 {
-	unsigned char credbuf[CMSG_SPACE(sizeof(struct cmsgcred))];
 	struct msghdr msg;
-	struct cmsghdr *cmsg;
 	struct iovec iov;
 	uint8_t dummy;
 
-	bzero(credbuf, sizeof(credbuf));
 	bzero(&msg, sizeof(msg));
 	bzero(&iov, sizeof(iov));
 
@@ -186,13 +183,21 @@ cred_send(int sock)
 
 	msg.msg_iov = &iov;
 	msg.msg_iovlen = 1;
+
+#if defined(HAVE_STRUCT_CMSGCRED)
+	unsigned char credbuf[CMSG_SPACE(sizeof(struct cmsgcred))];
+	bzero(credbuf, sizeof(credbuf));
 	msg.msg_control = credbuf;
 	msg.msg_controllen = sizeof(credbuf);
 
-	cmsg = CMSG_FIRSTHDR(&msg);
+	struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
 	cmsg->cmsg_len = CMSG_LEN(sizeof(struct cmsgcred));
 	cmsg->cmsg_level = SOL_SOCKET;
 	cmsg->cmsg_type = SCM_CREDS;
+#elif defined(HAVE_STRUCT_UCRED)
+	msg.msg_control = NULL;
+	msg.msg_controllen = 0;
+#endif
 
 	if (msg_send(sock, &msg) == -1)
 		return (-1);
@@ -201,15 +206,14 @@ cred_send(int sock)
 }
 
 int
-cred_recv(int sock, struct cmsgcred *cred)
+cred_recv(int sock, uid_t *uid, gid_t *gid, int *ngroups, gid_t *groups)
 {
-	unsigned char credbuf[CMSG_SPACE(sizeof(struct cmsgcred))];
+	int cred_type, cred_len;
 	struct msghdr msg;
 	struct cmsghdr *cmsg;
 	struct iovec iov;
 	uint8_t dummy;
 
-	bzero(credbuf, sizeof(credbuf));
 	bzero(&msg, sizeof(msg));
 	bzero(&iov, sizeof(iov));
 
@@ -218,20 +222,64 @@ cred_recv(int sock, struct cmsgcred *cred)
 
 	msg.msg_iov = &iov;
 	msg.msg_iovlen = 1;
+
+#if defined(HAVE_STRUCT_CMSGCRED)
+	unsigned char credbuf[CMSG_SPACE(sizeof(struct cmsgcred))];
+	bzero(credbuf, sizeof(credbuf));
 	msg.msg_control = credbuf;
 	msg.msg_controllen = sizeof(credbuf);
+
+	cred_type = SCM_CREDS;
+	cred_len = CMSG_LEN(sizeof(struct cmsgcred));
+#elif defined(HAVE_STRUCT_UCRED)
+        unsigned char credbuf[CMSG_SPACE(sizeof(struct ucred))];
+	msg.msg_control = credbuf;
+	msg.msg_controllen = sizeof(credbuf);
+
+        cmsg = CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = CMSG_LEN(sizeof(struct ucred));
+	cmsg->cmsg_level = SOL_SOCKET;
+	cmsg->cmsg_type = SCM_CREDENTIALS;
+
+	cred_type = SCM_CREDENTIALS;
+	cred_len = CMSG_LEN(sizeof(struct ucred));
+
+	int optval = 1;
+	if (setsockopt(sock, SOL_SOCKET, SO_PASSCRED, &optval, sizeof(optval)) == -1) {
+		errno = EINVAL;
+		return (-1);
+	}
+#endif
 
 	if (msg_recv(sock, &msg) == -1)
 		return (-1);
 
 	cmsg = CMSG_FIRSTHDR(&msg);
 	if (cmsg == NULL ||
-	    cmsg->cmsg_len != CMSG_LEN(sizeof(struct cmsgcred)) ||
-	    cmsg->cmsg_level != SOL_SOCKET || cmsg->cmsg_type != SCM_CREDS) {
+	    cmsg->cmsg_len != cred_len ||
+	    cmsg->cmsg_level != SOL_SOCKET || cmsg->cmsg_type != cred_type) {
 		errno = EINVAL;
 		return (-1);
 	}
-	bcopy(CMSG_DATA(cmsg), cred, sizeof(*cred));
+
+#if defined(HAVE_STRUCT_CMSGCRED)
+	struct cmsgcred *cred = CMSG_DATA(cmsg);
+	*uid = cred->cmcred_euid;
+	*gid = cred->cmcred_groups[0];
+	if (ngroups && *ngroups > 0 && groups) {
+		int count = cred->cmcred_ngroups;
+		if (*ngroups < count)
+			count = *ngroups;
+		bcopy(groups, cred->cmcred_groups, count*sizeof(gid_t));
+		*ngroups = cred->cmred_ngroups;
+	}
+#elif defined(HAVE_STRUCT_UCRED)
+	struct ucred *ucred = (struct ucred *) CMSG_DATA(cmsg);
+	*uid = ucred->uid;
+	*gid = ucred->gid;
+	if (ngroups)
+		*ngroups = -1;
+#endif
 
 	return (0);
 }
@@ -293,13 +341,13 @@ fd_package_recv(int sock, int *fds, size_t nfds)
 	unsigned int i;
 	int serrno, ret;
 	struct iovec iov;
-	uint8_t dummy;
+        uint8_t dummy;
 
 	PJDLOG_ASSERT(sock >= 0);
 	PJDLOG_ASSERT(nfds > 0);
 	PJDLOG_ASSERT(fds != NULL);
 
-	i = 0;
+        i = 0;
 	bzero(&msg, sizeof(msg));
 	bzero(&iov, sizeof(iov));
 

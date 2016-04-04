@@ -36,7 +36,12 @@ OBJS= blocksort.o  \
       stream.o     \
       bzlib.o
 
-all: libbz2.a bzip2 bzip2recover
+NVOBJS= dnvlist.o  \
+        nvlist.o   \
+        nvpair.o   \
+        msgio.o
+
+all: libbz2.a bzip2 bzip2recover libnv.a
 
 bzip2: libbz2.a bzip2.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ bzip2.o -L. -lbz2
@@ -51,6 +56,10 @@ libbz2.a: $(OBJS)
 		-f /bin/ranlib -o -f /usr/ccs/bin/ranlib ) ; then \
 		$(RANLIB) $@ ; \
 	fi
+
+libnv.a: $(NVOBJS)
+	rm -f libnv.a
+	$(AR) cq libnv.a $(NVOBJS)
 
 check: test
 test: bzip2
@@ -96,11 +105,13 @@ install: bzip2 bzip2recover
 	echo ".so man1/bzdiff.1" > $(PREFIX)/man/man1/bzcmp.1
 
 clean:
-	rm -f *.o libbz2.a bzip2 bzip2recover \
+	rm -f *.o libbz2.a libnv.a bzip2 bzip2recover \
 	sample1.rb2 sample2.rb2 sample3.rb2 \
 	sample1.tst sample2.tst sample3.tst
 
 %.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+%.o: third_party/libnv/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 

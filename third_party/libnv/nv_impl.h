@@ -27,7 +27,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: head/sys/contrib/libnv/nv_impl.h 286796 2015-08-15 06:34:49Z oshogbo $
+ * $FreeBSD$
  */
 
 #ifndef	_NV_IMPL_H_
@@ -43,29 +43,11 @@ typedef struct nvpair nvpair_t;
 #define	NV_TYPE_NVLIST_ARRAY_NEXT	254
 #define	NV_TYPE_NVLIST_UP		255
 
-#define	NV_TYPE_FIRST			NV_TYPE_NULL
-#define	NV_TYPE_LAST			NV_TYPE_DESCRIPTOR_ARRAY
+#define	NV_TYPE_FIRST		NV_TYPE_NULL
+#define	NV_TYPE_LAST		NV_TYPE_DESCRIPTOR_ARRAY
 
 #define	NV_FLAG_BIG_ENDIAN		0x080
 #define	NV_FLAG_IN_ARRAY		0x100
-
-#ifdef _KERNEL
-#define	nv_malloc(size)			malloc((size), M_NVLIST, M_WAITOK)
-#define	nv_calloc(n, size)		malloc((n) * (size), M_NVLIST, \
-					    M_WAITOK | M_ZERO)
-#define	nv_realloc(buf, size)		realloc((buf), (size), M_NVLIST, \
-					    M_WAITOK)
-#define	nv_free(buf)			free((buf), M_NVLIST)
-#define	nv_strdup(buf)			strdup((buf), M_NVLIST)
-#define	nv_vasprintf(ptr, ...)		vasprintf(ptr, M_NVLIST, __VA_ARGS__)
-
-#define	ERRNO_SET(var)			do { } while (0)
-#define	ERRNO_SAVE()			do { do { } while(0)
-#define	ERRNO_RESTORE()			} while (0)
-
-#define	ERRNO_OR_DEFAULT(default)	(default)
-
-#else
 
 #define	nv_malloc(size)			malloc((size))
 #define	nv_calloc(n, size)		calloc((n), (size))
@@ -84,8 +66,6 @@ typedef struct nvpair nvpair_t;
 					} while (0)
 
 #define	ERRNO_OR_DEFAULT(default)	(errno == 0 ? (default) : errno)
-
-#endif
 
 int	*nvlist_descriptors(const nvlist_t *nvl, size_t *nitemsp);
 size_t	 nvlist_ndescriptors(const nvlist_t *nvl);
@@ -141,12 +121,12 @@ nvpair_t *nvpair_move_descriptor_array(const char *name, int *value, size_t nite
 nvpair_t *nvpair_move_number_array(const char *name, uint64_t *value, size_t nitems);
 nvpair_t *nvpair_move_string_array(const char *name, char **value, size_t nitems);
 
-bool			 nvpair_get_bool(const nvpair_t *nvp);
-uint64_t		 nvpair_get_number(const nvpair_t *nvp);
-const char		*nvpair_get_string(const nvpair_t *nvp);
-const nvlist_t		*nvpair_get_nvlist(const nvpair_t *nvp);
-int			 nvpair_get_descriptor(const nvpair_t *nvp);
-const void		*nvpair_get_binary(const nvpair_t *nvp, size_t *sizep);
+bool		 nvpair_get_bool(const nvpair_t *nvp);
+uint64_t	 nvpair_get_number(const nvpair_t *nvp);
+const char	*nvpair_get_string(const nvpair_t *nvp);
+const nvlist_t	*nvpair_get_nvlist(const nvpair_t *nvp);
+int		 nvpair_get_descriptor(const nvpair_t *nvp);
+const void	*nvpair_get_binary(const nvpair_t *nvp, size_t *sizep);
 const bool		*nvpair_get_bool_array(const nvpair_t *nvp, size_t *nitemsp);
 const uint64_t		*nvpair_get_number_array(const nvpair_t *nvp, size_t *nitemsp);
 const char * const	*nvpair_get_string_array(const nvpair_t *nvp, size_t *nitemsp);

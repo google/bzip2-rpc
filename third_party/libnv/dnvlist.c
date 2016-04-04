@@ -28,29 +28,16 @@
  */
 
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: head/sys/contrib/libnv/dnvlist.c 285139 2015-07-04 16:33:37Z oshogbo $");
 
-#ifdef _KERNEL
-
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/systm.h>
-#include <sys/malloc.h>
-
-#include <machine/stdarg.h>
-
-#else
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#endif
 
-#include <sys/dnv.h>
-#include <sys/nv.h>
-
+#include "nv.h"
 #include "nv_impl.h"
+
+#include "dnv.h"
 
 #define	DNVLIST_GET(ftype, type)					\
 ftype									\
@@ -67,9 +54,7 @@ DNVLIST_GET(bool, bool)
 DNVLIST_GET(uint64_t, number)
 DNVLIST_GET(const char *, string)
 DNVLIST_GET(const nvlist_t *, nvlist)
-#ifndef _KERNEL
 DNVLIST_GET(int, descriptor)
-#endif
 
 #undef	DNVLIST_GET
 
@@ -104,9 +89,7 @@ DNVLIST_TAKE(bool, bool)
 DNVLIST_TAKE(uint64_t, number)
 DNVLIST_TAKE(char *, string)
 DNVLIST_TAKE(nvlist_t *, nvlist)
-#ifndef _KERNEL
 DNVLIST_TAKE(int, descriptor)
-#endif
 
 #undef	DNVLIST_TAKE
 
