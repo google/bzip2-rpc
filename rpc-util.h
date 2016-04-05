@@ -1,5 +1,9 @@
 #ifndef _RPC_UTIL_H
 #define _RPC_UTIL_H
+/* Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by the bzip2
+ * license that can be found in the LICENSE file. */
 
 /* Logging & other utilities */
 #include <stdarg.h>

@@ -1,3 +1,8 @@
+# Copyright 2016 Google Inc. All Rights Reserved.
+#
+# Use of this source code is governed by the bzip2
+# license that can be found in the LICENSE file.
+
 @0x8484d2d77983b934;
 
 using Cxx = import "/capnp/c++.capnp";

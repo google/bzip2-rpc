@@ -1,3 +1,8 @@
+// Copyright 2016 Google Inc. All Rights Reserved.
+//
+// Use of this source code is governed by the bzip2
+// license that can be found in the LICENSE file.
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -119,4 +124,3 @@ int main(int argc, char *argv[]) {
   api_("'%s' program stop", argv[0]);
   return 0;
 }
-

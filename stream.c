@@ -1,5 +1,19 @@
 #include "bzlib_private.h"
 
+/* ------------------------------------------------------------------
+   This file is part of bzip2/libbzip2, a program and library for
+   lossless, block-sorting data compression.
+
+   bzip2/libbzip2 version 1.0.6 of 6 September 2010
+   Copyright (C) 1996-2010 Julian Seward <jseward@bzip.org>
+
+   Please read the WARNING, DISCLAIMER and PATENTS sections in the
+   README file.
+
+   This program is released under the terms of the license contained
+   in the file LICENSE.
+   ------------------------------------------------------------------ */
+
 /*---------------------------------------------------*/
 /*--- An implementation of 64-bit ints.  Sigh.    ---*/
 /*--- Roll on widespread deployment of ANSI C9X ! ---*/
@@ -68,7 +82,7 @@ void uInt64_toAscii ( char* outbuf, UInt64* n )
       nBuf++;
    } while (!uInt64_isZero(&n_copy));
    outbuf[nBuf] = 0;
-   for (i = 0; i < nBuf; i++) 
+   for (i = 0; i < nBuf; i++)
       outbuf[i] = buf[nBuf-i-1];
 }
 
@@ -281,4 +295,3 @@ int BZ_API(BZ2_bzTestStream)( int        ifd,
    if (verbosity >= 2) fprintf ( stderr, "\n    " );
    return BZ_OK;
 }
-

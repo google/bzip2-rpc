@@ -1,3 +1,8 @@
+// Copyright 2016 Google Inc. All Rights Reserved.
+//
+// Use of this source code is governed by the bzip2
+// license that can be found in the LICENSE file.
+
 syntax = "proto3";
 
 package bz2;
@@ -46,4 +51,3 @@ message LibVersionRequest {
 message LibVersionReply {
   string version = 1;
 }
-
