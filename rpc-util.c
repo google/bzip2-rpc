@@ -25,6 +25,12 @@ void _log_at(int level, const char *filename, int lineno, const char *format, ..
   if (level >= 10) exit(1);
 }
 
+static void __attribute__((constructor)) _log_init(void) {
+  const char *value = getenv("RPC_DEBUG");
+  if (!value) return;
+  verbose = atoi(value);
+}
+
 void CrashHandler(int sig) {
   void *bt[20];
   size_t count;
@@ -52,8 +58,10 @@ void RunDriver(int xfd, const char *filename, int sock_fd) {
   /* Child process: store the socket FD in the environment */
   char *argv[] = {(char *)filename, NULL};
   char nonce_buffer[] = "API_NONCE_FD=xxxxxxxx";
-  char * envp[] = {nonce_buffer, NULL};
+  char debug_buffer[] = "RPC_DEBUG=xxxxxxx";
+  char * envp[] = {nonce_buffer, debug_buffer, NULL};
   sprintf(nonce_buffer, "API_NONCE_FD=%d", sock_fd);
+  sprintf(debug_buffer, "RPC_DEBUG=%d", verbose);
   verbose_("in child process, about to fexecve(fd=%d ('%s'), API_NONCE_FD=%d)",
            xfd, filename, sock_fd);
   /* Execute the driver program. */
