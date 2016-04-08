@@ -34,11 +34,15 @@ int verbose = 4;
 namespace bz2 {
 
 class Bz2Impl final : public Bz2::Server {
+public:
+  Bz2Impl(int sock_fd) : Bz2::Server(), sock_fd_(sock_fd) {}
   kj::Promise<void> compressStream(CompressStreamContext context) override {
     static const char *method = "BZ2_bzCompressStream";
     auto msg = context.getParams();
-    int ifd = msg.getIfd();
-    int ofd = msg.getOfd();
+    int ifd_nonce = msg.getIfd();
+    int ifd = GetTransferredFd(sock_fd_, ifd_nonce);
+    int ofd_nonce = msg.getOfd();
+    int ofd = GetTransferredFd(sock_fd_, ofd_nonce);
     int blockSize100k = msg.getBlockSize100k();
     int verbosity = msg.getVerbosity();
     int workFactor = msg.getWorkFactor();
@@ -47,13 +51,17 @@ class Bz2Impl final : public Bz2::Server {
     api_("=> %s(%d, %d, %d, %d, %d) return %d", method, ifd, ofd, blockSize100k, verbosity, workFactor, retval);
     auto rsp = context.getResults();
     rsp.setResult(retval);
+    close(ifd);
+    close(ofd);
     return kj::READY_NOW;
   }
   kj::Promise<void> decompressStream(DecompressStreamContext context) override {
     static const char *method = "BZ2_bzDecompressStream";
     auto msg = context.getParams();
-    int ifd = msg.getIfd();
-    int ofd = msg.getOfd();
+    int ifd_nonce = msg.getIfd();
+    int ifd = GetTransferredFd(sock_fd_, ifd_nonce);
+    int ofd_nonce = msg.getOfd();
+    int ofd = GetTransferredFd(sock_fd_, ofd_nonce);
     int verbosity = msg.getVerbosity();
     int small = msg.getSmall();
     api_("=> %s(%d, %d, %d, %d)", method, ifd, ofd, verbosity, small);
@@ -61,12 +69,15 @@ class Bz2Impl final : public Bz2::Server {
     api_("=> %s(%d, %d, %d, %d) return %d", method, ifd, ofd, verbosity, small, retval);
     auto rsp = context.getResults();
     rsp.setResult(retval);
+    close(ifd);
+    close(ofd);
     return kj::READY_NOW;
   }
   kj::Promise<void> testStream(TestStreamContext context) override {
     static const char *method = "BZ2_bzTestStream";
     auto msg = context.getParams();
-    int ifd = msg.getIfd();
+    int ifd_nonce = msg.getIfd();
+    int ifd = GetTransferredFd(sock_fd_, ifd_nonce);
     int verbosity = msg.getVerbosity();
     int small = msg.getSmall();
     api_("=> %s(%d, %d, %d)", method, ifd, verbosity, small);
@@ -74,6 +85,7 @@ class Bz2Impl final : public Bz2::Server {
     api_("=> %s(%d, %d, %d) return %d", method, ifd, verbosity, small, retval);
     auto rsp = context.getResults();
     rsp.setResult(retval);
+    close(ifd);
     return kj::READY_NOW;
   }
   kj::Promise<void> libVersion(LibVersionContext context) override {
@@ -85,6 +97,9 @@ class Bz2Impl final : public Bz2::Server {
     rsp.setVersion(retval);
     return kj::READY_NOW;
   }
+
+private:
+  int sock_fd_;
 };
 
 }  // namespace bz2
@@ -102,7 +117,7 @@ int main(int argc, char *argv[]) {
   std::string server_address = "unix:";
   server_address += sockfile;
   log_("listening on %s", server_address.c_str());
-  capnp::EzRpcServer server(kj::heap<bz2::Bz2Impl>(), server_address);
+  capnp::EzRpcServer server(kj::heap<bz2::Bz2Impl>(sock_fd), server_address);
 
   // Tell the parent the address we're listening on.
   uint32_t len = server_address.size() + 1;
@@ -111,7 +126,6 @@ int main(int argc, char *argv[]) {
   assert (rc == sizeof(len));
   rc = write(sock_fd, server_address.c_str(), len);
   assert ((uint32_t)rc == len);
-  close(sock_fd);
 
   // Main loop
   auto& waitScope = server.getWaitScope();

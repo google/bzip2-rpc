@@ -33,12 +33,16 @@ int verbose = 4;
 namespace bz2 {
 
 class Bz2ServiceImpl final : public Bz2::Service {
+public:
+  Bz2ServiceImpl(int sock_fd) : Service(), sock_fd_(sock_fd) {}
   grpc::Status CompressStream(grpc::ServerContext* context,
                               const CompressStreamRequest* msg,
                               CompressStreamReply* rsp) {
     static const char *method = "BZ2_bzCompressStream";
-    int ifd = msg->ifd();
-    int ofd = msg->ofd();
+    int ifd_nonce = msg->ifd();
+    int ifd = GetTransferredFd(sock_fd_, ifd_nonce);
+    int ofd_nonce = msg->ofd();
+    int ofd = GetTransferredFd(sock_fd_, ofd_nonce);
     int blockSize100k = msg->blocksize100k();
     int verbosity = msg->verbosity();
     int workFactor = msg->workfactor();
@@ -46,33 +50,41 @@ class Bz2ServiceImpl final : public Bz2::Service {
     int retval = BZ2_bzCompressStream(ifd, ofd, blockSize100k, verbosity, workFactor);
     api_("=> %s(%d, %d, %d, %d, %d) return %d", method, ifd, ofd, blockSize100k, verbosity, workFactor, retval);
     rsp->set_result(retval);
+    close(ifd);
+    close(ofd);
     return grpc::Status::OK;
   }
   grpc::Status DecompressStream(grpc::ServerContext* context,
                                 const DecompressStreamRequest* msg,
                                 DecompressStreamReply* rsp) {
     static const char *method = "BZ2_bzDecompressStream";
-    int ifd = msg->ifd();
-    int ofd = msg->ofd();
+    int ifd_nonce = msg->ifd();
+    int ifd = GetTransferredFd(sock_fd_, ifd_nonce);
+    int ofd_nonce = msg->ofd();
+    int ofd = GetTransferredFd(sock_fd_, ofd_nonce);
     int verbosity = msg->verbosity();
     int small = msg->small();
     api_("=> %s(%d, %d, %d, %d)", method, ifd, ofd, verbosity, small);
     int retval = BZ2_bzDecompressStream(ifd, ofd, verbosity, small);
     api_("=> %s(%d, %d, %d, %d) return %d", method, ifd, ofd, verbosity, small, retval);
     rsp->set_result(retval);
+    close(ifd);
+    close(ofd);
     return grpc::Status::OK;
   }
   grpc::Status TestStream(grpc::ServerContext* context,
                           const TestStreamRequest* msg,
                           TestStreamReply* rsp) {
     static const char *method = "BZ2_bzTestStream";
-    int ifd = msg->ifd();
+    int ifd_nonce = msg->ifd();
+    int ifd = GetTransferredFd(sock_fd_, ifd_nonce);
     int verbosity = msg->verbosity();
     int small = msg->small();
     api_("=> %s(%d, %d, %d)", method, ifd, verbosity, small);
     int retval = BZ2_bzTestStream(ifd, verbosity, small);
     api_("=> %s(%d, %d, %d) return %d", method, ifd, verbosity, small, retval);
     rsp->set_result(retval);
+    close(ifd);
     return grpc::Status::OK;
   }
   grpc::Status LibVersion(grpc::ServerContext* context,
@@ -85,6 +97,9 @@ class Bz2ServiceImpl final : public Bz2::Service {
     api_("<= %s() return '%s'", method, retval);
     return grpc::Status::OK;
   }
+
+private:
+  int sock_fd_;
 };
 
 }  // namespace bz2
@@ -106,7 +121,7 @@ int main(int argc, char *argv[]) {
   grpc::ServerBuilder builder;
   // Listen on the given address without any authentication mechanism.
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-  bz2::Bz2ServiceImpl service;
+  bz2::Bz2ServiceImpl service(sock_fd);
   builder.RegisterService(&service);
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
 
@@ -117,7 +132,6 @@ int main(int argc, char *argv[]) {
   assert (rc == sizeof(len));
   rc = write(sock_fd, server_address.c_str(), len);
   assert ((uint32_t)rc == len);
-  close(sock_fd);
 
   // Main loop
   server->Wait();

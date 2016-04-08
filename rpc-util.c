@@ -6,6 +6,8 @@
 #include "rpc-util.h"
 
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -67,4 +69,68 @@ void RunDriver(int xfd, const char *filename, int sock_fd) {
   /* Execute the driver program. */
   fexecve(xfd, argv, envp);
   fatal_("!!! in child process, failed to fexecve, errno=%d (%s)", errno, strerror(errno));
+}
+
+int GetTransferredFd(int sock_fd, int nonce) {
+  int value = -1;
+  struct iovec iov;
+  iov.iov_base = &value;
+  iov.iov_len = sizeof(nonce);
+  unsigned char data[CMSG_SPACE(sizeof(int))];
+  struct msghdr msg;
+  memset(&msg, 0, sizeof(msg));
+  msg.msg_iov = &iov;
+  msg.msg_iovlen = 1;
+  msg.msg_controllen = sizeof(data);
+  msg.msg_control = data;
+
+  struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+  cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+  cmsg->cmsg_level = SOL_SOCKET;
+  cmsg->cmsg_type = SCM_RIGHTS;
+
+  int rc;
+  do {
+    rc = recvmsg(sock_fd, &msg, 0);
+  } while (rc == -1 && errno == EINTR);
+  cmsg = CMSG_FIRSTHDR(&msg);
+  if (cmsg == NULL)
+    fatal_("no cmsghdr received");
+  if (cmsg->cmsg_len != CMSG_LEN(sizeof(int)))
+    fatal_("unexpected cmsg_len %d", cmsg->cmsg_len);
+  if (cmsg->cmsg_level != SOL_SOCKET)
+    fatal_("unexpected cmsg_level %d", cmsg->cmsg_level);
+  if (cmsg->cmsg_type != SCM_RIGHTS)
+    fatal_("unexpected cmsg_type %d", cmsg->cmsg_type);
+  if (value != nonce)
+    fatal_("unexpected nonce value %d not %d", value, nonce);
+
+  int fd = *((int *) CMSG_DATA(cmsg));
+  log_("received fd %d across socket %d nonce=%d rc=%d", fd, sock_fd, nonce, rc);
+  return fd;
+}
+
+// Returns nonce to be sent instead
+int TransferFd(int sock_fd, int fd) {
+  int nonce = rand();
+  struct iovec iov;
+  iov.iov_base = &nonce;
+  iov.iov_len = sizeof(nonce);
+  unsigned char data[CMSG_SPACE(sizeof(int))];
+  struct msghdr msg;
+  memset(&msg, 0, sizeof(msg));
+  msg.msg_iov = &iov;
+  msg.msg_iovlen = 1;
+  msg.msg_controllen = sizeof(data);
+  msg.msg_control = data;
+
+  struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
+  cmsg->cmsg_len = CMSG_LEN(sizeof(int));
+  cmsg->cmsg_level = SOL_SOCKET;
+  cmsg->cmsg_type = SCM_RIGHTS;
+  *((int*)CMSG_DATA(cmsg)) = fd;
+
+  int rc = sendmsg(sock_fd, &msg, 0);
+  log_("sent fd %d across socket %d with nonce=%d rc=%d", fd, sock_fd, nonce, rc);
+  return nonce;
 }

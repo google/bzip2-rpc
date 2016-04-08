@@ -54,17 +54,17 @@ public:
       // Child process: run the driver
       RunDriver(g_exe_fd, g_exe_file, socket_fds[1]);
     }
+    sock_fd_ = socket_fds[0];
+    close(socket_fds[1]);
 
     // Read bootstrap information back from the child:
     // uint32_t len, char server_addr[len]
     uint32_t len;
-    rc = read(socket_fds[0], &len, sizeof(len));
+    rc = read(sock_fd_, &len, sizeof(len));
     assert (rc == sizeof(len));
     server_address_ = (char *)malloc(len);
-    rc = read(socket_fds[0], server_address_, len);
+    rc = read(sock_fd_, server_address_, len);
     assert (len == (uint32_t)rc);
-    close(socket_fds[0]);
-    close(socket_fds[1]);
 
     std::shared_ptr<grpc::Channel> channel = grpc::CreateChannel(
       server_address_, grpc::InsecureChannelCredentials());
@@ -73,6 +73,7 @@ public:
 
   ~DriverConnection() {
     api_("~DriverConnection({pid=%d})", pid_);
+    close(sock_fd_);
     if (pid_ > 0) {
       int status;
       log_("kill pid_ %d", pid_);
@@ -92,9 +93,11 @@ public:
   }
 
   bz2::Bz2::Stub *stub() {return stub_.get();}
+  int sock_fd() {return sock_fd_;}
 
 private:
   pid_t pid_;  // Child process ID.
+  int sock_fd_;
   char* server_address_;
   std::unique_ptr<bz2::Bz2::Stub> stub_;
 };
@@ -114,11 +117,10 @@ int BZ2_bzCompressStream(int ifd, int ofd, int blockSize100k, int verbosity, int
   bz2::CompressStreamRequest msg;
   bz2::CompressStreamReply rsp;
   grpc::ClientContext context;
-  // TODO: this currently relies on parent/child sharing fdtable, so that the FD numbers
-  // are the same in both.  A more general solution that allows passing of FDs over
-  // the UNIX domain socket would be preferable.  (Passim)
-  msg.set_ifd(ifd);
-  msg.set_ofd(ofd);
+  int ifd_nonce = TransferFd(conn.sock_fd(), ifd);
+  msg.set_ifd(ifd_nonce);
+  int ofd_nonce = TransferFd(conn.sock_fd(), ofd);
+  msg.set_ofd(ofd_nonce);
   msg.set_blocksize100k(blockSize100k);
   msg.set_verbosity(verbosity);
   msg.set_workfactor(workFactor);
@@ -137,8 +139,10 @@ int BZ2_bzDecompressStream(int ifd, int ofd, int verbosity, int small) {
   bz2::DecompressStreamRequest msg;
   bz2::DecompressStreamReply rsp;
   grpc::ClientContext context;
-  msg.set_ifd(ifd);
-  msg.set_ofd(ofd);
+  int ifd_nonce = TransferFd(conn.sock_fd(), ifd);
+  msg.set_ifd(ifd_nonce);
+  int ofd_nonce = TransferFd(conn.sock_fd(), ofd);
+  msg.set_ofd(ofd_nonce);
   msg.set_verbosity(verbosity);
   msg.set_small(small);
   api_("%s(%d, %d, %d, %d) =>", method, ifd, ofd, verbosity, small);
@@ -156,7 +160,8 @@ int BZ2_bzTestStream(int ifd, int verbosity, int small) {
   bz2::TestStreamRequest msg;
   bz2::TestStreamReply rsp;
   grpc::ClientContext context;
-  msg.set_ifd(ifd);
+  int ifd_nonce = TransferFd(conn.sock_fd(), ifd);
+  msg.set_ifd(ifd_nonce);
   msg.set_verbosity(verbosity);
   msg.set_small(small);
   api_("%s(%d, %d, %d) =>", method, ifd, verbosity, small);

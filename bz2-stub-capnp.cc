@@ -54,23 +54,24 @@ public:
       close(socket_fds[0]);
       RunDriver(g_exe_fd, g_exe_file, socket_fds[1]);
     }
+    sock_fd_ = socket_fds[0];
+    close(socket_fds[1]);
 
     // Read bootstrap information back from the child:
     // uint32_t len, char server_addr[len]
     uint32_t len;
-    rc = read(socket_fds[0], &len, sizeof(len));
+    rc = read(sock_fd_, &len, sizeof(len));
     assert (rc == sizeof(len));
     server_address_ = (char *)malloc(len);
-    rc = read(socket_fds[0], server_address_, len);
+    rc = read(sock_fd_, server_address_, len);
     assert (len == (uint32_t)rc);
-    close(socket_fds[0]);
-    close(socket_fds[1]);
 
     client_.reset(new capnp::EzRpcClient(server_address_));
   }
 
   ~DriverConnection() {
     api_("~DriverConnection({pid=%d})", pid_);
+    close(sock_fd_);
     if (pid_ > 0) {
       int status;
       log_("kill pid_ %d", pid_);
@@ -91,9 +92,11 @@ public:
 
   capnp::EzRpcClient* client() {return client_.get();}
   bz2::Bz2::Client cap() {return client_->getMain<bz2::Bz2>();}
+  int sock_fd() {return sock_fd_;}
 
 private:
   pid_t pid_;  // Child process ID.
+  int sock_fd_;
   char* server_address_;
   std::unique_ptr<capnp::EzRpcClient> client_;
 };
@@ -113,8 +116,10 @@ int BZ2_bzCompressStream(int ifd, int ofd, int blockSize100k, int verbosity, int
   auto& waitScope = conn.client()->getWaitScope();
   bz2::Bz2::Client cap = conn.cap();
   auto msg = cap.compressStreamRequest();
-  msg.setIfd(ifd);
-  msg.setOfd(ofd);
+  int ifd_nonce = TransferFd(conn.sock_fd(), ifd);
+  msg.setIfd(ifd_nonce);
+  int ofd_nonce = TransferFd(conn.sock_fd(), ofd);
+  msg.setOfd(ofd_nonce);
   msg.setBlockSize100k(blockSize100k);
   msg.setVerbosity(verbosity);
   msg.setWorkFactor(workFactor);
@@ -133,8 +138,10 @@ int BZ2_bzDecompressStream(int ifd, int ofd, int verbosity, int small) {
   auto& waitScope = conn.client()->getWaitScope();
   bz2::Bz2::Client cap = conn.cap();
   auto msg = cap.decompressStreamRequest();
-  msg.setIfd(ifd);
-  msg.setOfd(ofd);
+  int ifd_nonce = TransferFd(conn.sock_fd(), ifd);
+  msg.setIfd(ifd_nonce);
+  int ofd_nonce = TransferFd(conn.sock_fd(), ofd);
+  msg.setOfd(ofd_nonce);
   msg.setVerbosity(verbosity);
   msg.setSmall(small);
   api_("%s(%d, %d, %d, %d) =>", method, ifd, ofd, verbosity, small);
@@ -152,7 +159,8 @@ int BZ2_bzTestStream(int ifd, int verbosity, int small) {
   auto& waitScope = conn.client()->getWaitScope();
   bz2::Bz2::Client cap = conn.cap();
   auto msg = cap.testStreamRequest();
-  msg.setIfd(ifd);
+  int ifd_nonce = TransferFd(conn.sock_fd(), ifd);
+  msg.setIfd(ifd_nonce);
   msg.setVerbosity(verbosity);
   msg.setSmall(small);
   api_("%s(%d, %d, %d) =>", method, ifd, verbosity, small);
