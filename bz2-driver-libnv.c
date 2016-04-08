@@ -50,11 +50,11 @@ static void MainLoop(int sock_fd) {
 int main(int argc, char *argv[]) {
   signal(SIGSEGV, CrashHandler);
   signal(SIGABRT, CrashHandler);
-  api_("'%s' program start", argv[0]);
-
   const char *fd_str = getenv("API_NONCE_FD");
   assert (fd_str != NULL);
   int sock_fd = atoi(fd_str);
+  api_("'%s' program start, parent socket %d", argv[0], sock_fd);
+
   MainLoop(sock_fd);
 
   api_("'%s' program stop", argv[0]);

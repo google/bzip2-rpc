@@ -92,7 +92,10 @@ class Bz2ServiceImpl final : public Bz2::Service {
 int main(int argc, char *argv[]) {
   signal(SIGSEGV, CrashHandler);
   signal(SIGABRT, CrashHandler);
-  api_("'%s' program start", argv[0]);
+  const char *fd_str = getenv("API_NONCE_FD");
+  assert (fd_str != NULL);
+  int sock_fd = atoi(fd_str);
+  api_("'%s' program start, parent socket %d", argv[0], sock_fd);
 
   // Build the address of a UNIX socket for the service.
   const char *sockfile = tempnam(nullptr, "gsck");
@@ -109,9 +112,6 @@ int main(int argc, char *argv[]) {
 
   // Tell the parent the address we're listening on.
   uint32_t len = server_address.size() + 1;
-  const char *fd_str = getenv("API_NONCE_FD");
-  assert (fd_str != NULL);
-  int sock_fd = atoi(fd_str);
   int rc;
   rc = write(sock_fd, &len, sizeof(len));
   assert (rc == sizeof(len));
