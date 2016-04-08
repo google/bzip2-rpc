@@ -94,15 +94,21 @@ int main(int argc, char *argv[]) {
   signal(SIGABRT, CrashHandler);
   api_("'%s' program start", argv[0]);
 
-  // Listen on a UNIX socket
+  // Build the address of a UNIX socket for the service.
   const char *sockfile = tempnam(nullptr, "gsck");
   std::string server_address = "unix:";
   server_address += sockfile;
   log_("listening on %s", server_address.c_str());
 
+  grpc::ServerBuilder builder;
+  // Listen on the given address without any authentication mechanism.
+  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+  bz2::Bz2ServiceImpl service;
+  builder.RegisterService(&service);
+  std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
+
   // Tell the parent the address we're listening on.
   uint32_t len = server_address.size() + 1;
-
   const char *fd_str = getenv("API_NONCE_FD");
   assert (fd_str != NULL);
   int sock_fd = atoi(fd_str);
@@ -113,12 +119,7 @@ int main(int argc, char *argv[]) {
   assert ((uint32_t)rc == len);
   close(sock_fd);
 
-  bz2::Bz2ServiceImpl service;
-  grpc::ServerBuilder builder;
-  // Listen on the given address without any authentication mechanism.
-  builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
-  builder.RegisterService(&service);
-  std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
+  // Main loop
   server->Wait();
 
   api_("'%s' program stop", argv[0]);
