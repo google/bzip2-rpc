@@ -50,16 +50,9 @@ public:
     }
 
     if (pid_ == 0) {
-      // Child process: store the socket FD in the environment.
+      // Child process: run the driver
       close(socket_fds[0]);
-      char *argv[] = {(char *)"bz2-driver", NULL};
-      char nonce_buffer[] = "API_NONCE_FD=xxxxxxxx";
-      char * envp[] = {nonce_buffer, NULL};
-      sprintf(nonce_buffer, "API_NONCE_FD=%d", socket_fds[1]);
-      verbose_("in child process, about to fexecve(fd=%d ('%s'), API_NONCE_FD=%d)", g_exe_fd, g_exe_file, socket_fds[1]);
-      // Execute the driver program.
-      fexecve(g_exe_fd, argv, envp);
-      fatal_("!!! in child process, failed to fexecve, errno=%d (%s)", errno, strerror(errno));
+      RunDriver(g_exe_fd, g_exe_file, socket_fds[1]);
     }
 
     // Read bootstrap information back from the child:

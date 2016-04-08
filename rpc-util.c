@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <execinfo.h>
 #include <unistd.h>
 
@@ -45,4 +46,17 @@ int OpenDriver(const char* filename) {
   }
   verbose_("opened fd=%d for '%s'", fd, filename);
   return fd;
+}
+
+void RunDriver(int xfd, const char *filename, int sock_fd) {
+  /* Child process: store the socket FD in the environment */
+  char *argv[] = {(char *)filename, NULL};
+  char nonce_buffer[] = "API_NONCE_FD=xxxxxxxx";
+  char * envp[] = {nonce_buffer, NULL};
+  sprintf(nonce_buffer, "API_NONCE_FD=%d", sock_fd);
+  verbose_("in child process, about to fexecve(fd=%d ('%s'), API_NONCE_FD=%d)",
+           xfd, filename, sock_fd);
+  /* Execute the driver program. */
+  fexecve(xfd, argv, envp);
+  fatal_("!!! in child process, failed to fexecve, errno=%d (%s)", errno, strerror(errno));
 }

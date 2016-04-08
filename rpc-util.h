@@ -17,6 +17,7 @@ extern "C" {
 void _log_at(int level, const char *filename, int lineno, const char *format, ...);
 void CrashHandler(int sig);
 int OpenDriver(const char* filename);
+void RunDriver(int xfd, const char *filename, int sock_fd);
 
 #ifdef __cplusplus
 }

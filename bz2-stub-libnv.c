@@ -57,16 +57,8 @@ static struct DriverConnection *CreateConnection(void) {
   }
 
   if (conn->pid == 0) {
-    /* Child process: store the socket FD in the environment */
-    char *argv[] = {(char *)"bz2-driver", NULL};
-    char nonce_buffer[] = "API_NONCE_FD=xxxxxxxx";
-    char * envp[] = {nonce_buffer, NULL};
-    sprintf(nonce_buffer, "API_NONCE_FD=%d", conn->socket_fds[1]);
-    verbose_("in child process, about to fexecve(fd=%d ('%s'), API_NONCE_FD=%d)",
-             g_exe_fd, g_exe_file, conn->socket_fds[1]);
-    fexecve(g_exe_fd, argv, envp);
-    error_("!!! in child process, failed to fexecve, errno=%d (%s)", errno, strerror(errno));
-    exit(1);
+    // Child process: run the driver
+    RunDriver(g_exe_fd, g_exe_file, conn->socket_fds[1]);
   }
 
   return conn;
