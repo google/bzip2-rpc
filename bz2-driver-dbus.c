@@ -8,7 +8,6 @@
 #include <sys/stat.h>
 #include <assert.h>
 #include <errno.h>
-#include <execinfo.h>
 #include <fcntl.h>
 #include <poll.h>
 #include <signal.h>
@@ -27,13 +26,13 @@
 int _rpc_verbose = 4;
 int _rpc_indent = 4;
 
-static int pollfd_size = 0;  // Num allocated
-static int pollfd_count = 0;  // Num used
+static int pollfd_size = 0;  /* Num allocated */
+static int pollfd_count = 0;  /* Num used */
 static struct pollfd *pollfds = NULL;
 static DBusWatch **watches = NULL;
 
-static int conn_size = 0;  // Num allocated
-static int conn_count = 0;  // Num used
+static int conn_size = 0;  /* Num allocated */
+static int conn_count = 0;  /* Num used */
 static DBusConnection **conns = NULL;
 
 static int FindWatch(DBusWatch *watch) {
@@ -84,7 +83,7 @@ static void RemoveWatch(DBusWatch *watch, void *data) {
     warning_("Failed to find removed watch %p", watch);
     return;
   }
-  // Move up
+  /* Move up */
   pollfd_count--;
   if (ii < pollfd_count) {
     memmove(&(pollfds[ii]), &(pollfds[ii+1]),
@@ -109,7 +108,7 @@ static void ToggleWatch(DBusWatch *watch, void *data) {
 }
 
 
-// @@@ do something with timeouts
+/* @@@ do something with timeouts */
 static dbus_bool_t AddTimeout(DBusTimeout *timeout, void *data) {
   warning_("Add timeout");
   return TRUE;
@@ -129,8 +128,8 @@ static void DispatchStatus(DBusConnection *conn, DBusDispatchStatus status, void
            status == DBUS_DISPATCH_COMPLETE ? "COMPLETE" :
            status == DBUS_DISPATCH_NEED_MEMORY ? "NEED_MEMORY" : "<unknown>");
   if (status == DBUS_DISPATCH_DATA_REMAINS) {
-    // Can't do dbus_connection_dispatch(conn); here!
-    // Flag that this conn needs dispatch in main loop
+    /* Can't do dbus_connection_dispatch(conn); here! */
+    /* Flag that this conn needs dispatch in main loop */
   }
 }
 
@@ -181,7 +180,7 @@ static DBusObjectPathVTable vt = {
 };
 
 
-static void MainLoop(const char* objpath) {
+static void MainLoop(const char *objpath) {
   int rc;
   int ii;
   for (ii = 0; ii < pollfd_count; ii++) pollfds[ii].revents = 0;

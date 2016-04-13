@@ -123,7 +123,7 @@ int GetTransferredFd(int sock_fd, int nonce) {
   return fd;
 }
 
-// Returns nonce to be sent instead
+/* Returns nonce to be sent instead */
 int TransferFd(int sock_fd, int fd) {
   int nonce = rand();
   struct iovec iov;

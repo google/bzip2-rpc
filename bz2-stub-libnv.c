@@ -57,7 +57,7 @@ static struct DriverConnection *CreateConnection(void) {
   }
 
   if (conn->pid == 0) {
-    // Child process: run the driver
+    /* Child process: run the driver */
     RunDriver(g_exe_fd, g_exe_file, conn->socket_fds[1]);
   }
 
