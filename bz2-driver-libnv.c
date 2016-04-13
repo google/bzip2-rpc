@@ -24,7 +24,8 @@
 #include "rpc-util.h"
 #include "bzlib.h"
 
-int verbose = 4;
+int _rpc_verbose = 4;
+int _rpc_indent = 4;
 
 /* API-specfic message handler prototype */
 nvlist_t *APIMessageHandler(const nvlist_t *msg);

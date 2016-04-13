@@ -8,7 +8,8 @@
 /* Logging & other utilities */
 #include <stdarg.h>
 
-extern int verbose;
+extern int _rpc_verbose;
+extern int _rpc_indent;
 
 #ifdef __cplusplus
 extern "C" {

@@ -25,7 +25,8 @@
 #include "rpc-util.h"
 #include "bzlib.h"
 
-int verbose = 4;
+int _rpc_verbose = 4;
+int _rpc_indent = 4;
 
 static int pollfd_size = 0;  // Num allocated
 static int pollfd_count = 0;  // Num used

@@ -23,7 +23,8 @@
 
 #include "bzlib.capnp.h"
 
-int verbose = 4;  // smaller number => more verbose
+int _rpc_verbose = 4;  // smaller number => more verbose
+int _rpc_indent = 0;
 
 static const char *g_exe_file = "./bz2-driver-capnp";
 static int g_exe_fd = -1;  // File descriptor to driver executable

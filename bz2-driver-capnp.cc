@@ -29,7 +29,8 @@
 
 #include "bzlib.h"
 
-int verbose = 4;
+int _rpc_verbose = 4;
+int _rpc_indent = 4;
 
 namespace bz2 {
 
