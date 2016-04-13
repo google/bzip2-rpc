@@ -5,7 +5,6 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/wait.h>
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
@@ -68,12 +67,7 @@ static void DestroyConnection(struct DriverConnection *conn) {
     conn->dbus = NULL;
   }
   if (conn->pid > 0) {
-    int status;
-    log_("kill conn->pid %d", conn->pid);
-    kill(conn->pid, SIGKILL);
-    log_("reap conn->pid %d", conn->pid);
-    pid_t rc = waitpid(conn->pid, &status, 0);
-    log_("reaped conn->pid %d, rc=%d, status=%x", conn->pid, rc, status);
+    TerminateChild(conn->pid);
     conn->pid = 0;
   }
 }

@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/wait.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -69,6 +70,18 @@ void RunDriver(int xfd, const char *filename, int sock_fd) {
   /* Execute the driver program. */
   fexecve(xfd, argv, envp);
   fatal_("!!! in child process, failed to fexecve, errno=%d (%s)", errno, strerror(errno));
+}
+
+void TerminateChild(pid_t child) {
+  if (child > 0) {
+    int status;
+    log_("kill child %d", child);
+    kill(child, SIGKILL);
+    log_("reap child %d", child);
+    pid_t rc = waitpid(child, &status, 0);
+    log_("reaped child %d, rc=%d, status=%x", child, rc, status);
+    child = 0;
+  }
 }
 
 int GetTransferredFd(int sock_fd, int nonce) {

@@ -74,12 +74,7 @@ public:
     api_("~DriverConnection({pid=%d})", pid_);
     close(sock_fd_);
     if (pid_ > 0) {
-      int status;
-      log_("kill pid_ %d", pid_);
-      kill(pid_, SIGKILL);
-      log_("reap pid_ %d", pid_);
-      pid_t rc = waitpid(pid_, &status, 0);
-      log_("reaped pid_ %d, rc=%d, status=%x", pid_, rc, status);
+      TerminateChild(pid_);
       pid_ = 0;
     }
     if (server_address_) {

@@ -6,6 +6,7 @@
  * license that can be found in the LICENSE file. */
 
 /* Logging & other utilities */
+#include <sys/types.h>
 #include <stdarg.h>
 
 extern int _rpc_verbose;
@@ -19,6 +20,7 @@ void _log_at(int level, const char *filename, int lineno, const char *format, ..
 void CrashHandler(int sig);
 int OpenDriver(const char* filename);
 void RunDriver(int xfd, const char *filename, int sock_fd);
+void TerminateChild(pid_t child);
 int GetTransferredFd(int sock_fd, int nonce);
 int TransferFd(int sock_fd, int fd);
 
