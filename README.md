@@ -19,9 +19,10 @@ program.
 
 Chrome and OpenSSH are two of the most well-known applications that are
 privilege separated:
+
  - Chrome uses separate renderer processes so that the various kinds of media
-   that can appear in a web page, which are processed using a variety of
-   third-party media handling libraries, are completely walled off from the rest
+   that can appear in a web page (which are processed using a variety of
+   third-party media handling libraries) are completely walled off from the rest
    of the system.
  - OpenSSH governs access to systems based on sensitive authentication data;
    this data is specifically held in a distinct, simple, process that is only
@@ -69,11 +70,12 @@ On top of the base types, various compound types are normally available:
 ### Schema
 
 The serialization mechanism for an RPC framework may or may not require the use
-of a **schema**, which describes the valid data structures for a particular RPC
-interface.   For example, to transmit the data for a 3-dimensional point:
+of an explicit **schema**, which describes the valid data structures for a
+particular RPC interface.  For example, to transmit the data for a 3-dimensional
+point:
 
  - Code using a schema-less framework would simply encode three floating point
-   values one after another
+   values one after another, with an implicit convention for their order.
  - Code using a schema would explicitly specify that a `Point3D` type was a
    structure with fields `x`, `y`, and `z`, each of floating type.
 
@@ -180,7 +182,7 @@ transferring lists of name-value pairs.
 
  - Serialization:
      - base types: `bool`, `number`, `string`, `binary`, `descriptor`
-     - compound types: name-value lists
+     - compound types: name-value dictionaries
  - Schema: no
  - Transport: external socket
  - RPC invocation: no
@@ -199,7 +201,7 @@ private point-to-point connection between two processes.
  - Serialization:
      - [base types](https://dbus.freedesktop.org/doc/dbus-specification.html#basic-types):
        `BYTE`, `BOOLEAN`, `[U]INT{16,32,64}`, `DOUBLE`, `UNIX_FD`, `STRING`
-     - [compound types]https://dbus.freedesktop.org/doc/dbus-specification.html#container-types():
+     - [compound types](https://dbus.freedesktop.org/doc/dbus-specification.html#container-types):
        `STRUCT`, `ARRAY`, `VARIANT`
  - Schema: no
  - Transport: yes (shared bus or private connection over UNIX domain socket)
@@ -229,7 +231,7 @@ in C), there is no C API for serialization or RPC invocation.
  - Event model: yes
  - FD transfer: no
  - Language support: C++, Go, Java, Python, Ruby, C#
-   - Dependencies: `grpc`, `libssl`, `zlib`, `libstdc++`
+ - Dependencies: `grpc`, `libssl`, `zlib`, `libstdc++`
 
 
 ### Cap'n Proto
@@ -262,6 +264,9 @@ separated in order to apply the
 [Capsicum security framework](https://www.cl.cam.ac.uk/research/security/capsicum/).
 It is also of a manageable size, without being too trivial.
 
+To make bzip2 more suitable for having a remote implementation, we first make
+a couple of modifications to the library.
+
 ### Modification: FILE* to file descriptor
 
 The `bzlib` API includes a number of entrypoints that take a `FILE*` argument;
@@ -284,7 +289,7 @@ file at once.
 
 The `bzip2` command line utility does include such functions,
 `compressStream` and `decompressStream`, which loop around using the `bzlib`
-entrypoints, and these are the entrypoints that are remoted in the manual
+entrypoints; these are the entrypoints that are remoted in the manual
 remoting example for Capsicum mentioned above.
 
 Therefore, in order to compare like with like, we add an additional wrapper
@@ -309,7 +314,7 @@ These annotations give a richer semantics than the base C language allows
 [Security Annotation Language](https://msdn.microsoft.com/en-us/library/hh916383.aspx)),
 for example:
 
-- `__size(param_name)` indicates that the size of data pointed to by an
+ - `__size(param_name)` indicates that the size of data pointed to by an
    argument is given by a specific other argument.
  - `__handle` indicates that a pointer value is opaque, i.e. the data pointed to is
    never accessed by the caller (incomplete types are also treated as handles).
@@ -348,14 +353,21 @@ in turn invokes a new program containing the API driver program:
 ### File Descriptor Inheritance
 
 Not all of the RPC frameworks used support the passing of file descriptors
-over their transports.  For those that do not, we currently rely on the
-parent/child process structure described above, because this means that
-the child process can use the parent's file descriptor value to access the
-same underlying file.
+over their transports.  For those that do not (gRPC and Cap'n Proto), we
+currently use a UNIX socket that runs in parallel to the main RPC socket.
+To send a file descriptor:
+ - The sender encodes a nonce in the place where a file descriptor argument
+   of an RPC message would be.
+ - The sender also sends a message on the parallel UNIX socket; the data
+   content of the message is the nonce, and the `SCM_RIGHTS` ancillary
+   data transfers the file descriptor.
+ - The receiver extracts the expected nonce from the normal RPC message.
+ - The received reads the parallel message from the UNIX socket and checks
+   that its data content matches the nonce.  This `readmsg` operation
+   installs the transferred file descriptor in the receivers fdtable.
 
-(However, this approach will not work for more complicated APIs (e.g. any
-interface where files are opened while the API is currently in use), so needs
-to be replaced in the longer term.)
+(Note that this mechanism is currently implemented in a naive fashion,
+with no integration of the parallel socket into the program's event loop.)
 
 
 Disclaimer
