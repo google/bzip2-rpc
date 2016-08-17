@@ -256,7 +256,7 @@ creators of V2 of Google's protocol buffers).
 Target Modifications
 --------------------
 
-[bzip2](http://www.bzip/org) is the example target used to explore the
+[bzip2](http://www.bzip.org) is the example target used to explore the
 differences between different RPC frameworks; this target is chosen because
 [Ben Laurie](https://www.links.org) has previously
 [manually converted](http://www.links.org/?cat=12) it to be privileged
